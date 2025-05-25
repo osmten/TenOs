@@ -1,6 +1,7 @@
 #include "../cpu/isr.h"
 #include "../cpu/timer.h"
 #include "../drivers/keyboard.h"
+#include "../cpu/memory.h"
 
 struct multiboot_info {
 
@@ -42,12 +43,54 @@ struct memory_region {
 void main(struct multiboot_info* bootinfo) {
     kprint("\nKernel loaded:\n");
     isr_install();
-
-//    struct memory_region *mr = (struct memory_region*)bootinfo;
-    //kprint(bootinfo->m_mmap_addr);
-
     asm volatile("sti");
 
     init_timer(50);
     init_keyboard();
+
+
+
+	struct memory_region*	region = (struct memory_region*)bootinfo->m_mmap_addr;
+	int size = bootinfo->m_mmap_length/24;
+
+	//! get memory size in KB
+	u32 memSize = 1024 + bootinfo->m_memoryLo + bootinfo->m_memoryHi*64;
+
+	kprint("\nTotal Size ");
+	char *sz;
+	int_to_ascii(memSize, sz);
+	kprint(sz);
+	kprint(" ");
+
+	init_mem_mngr(0x100000, memSize);
+
+	for (int i=0; i<size; ++i) {
+
+		if (region[i].type>4)
+			region[i].type=1;
+
+		if (i>0 && region[i].startLo==0)
+			break;
+
+        kprint("\nddress ");
+        char *sc_ascii;
+        int_to_ascii(region[i].startHi, sc_ascii);
+        kprint(sc_ascii);
+        kprint(" ");
+
+		int_to_ascii(region[i].startLo, sc_ascii);
+        kprint(sc_ascii);
+        kprint("\nlength ");
+        int_to_ascii(region[i].sizeHi, sc_ascii);
+        kprint(sc_ascii);
+        kprint(" ");
+
+        int_to_ascii(region[i].sizeLo, sc_ascii);
+        kprint(sc_ascii);
+
+		if (region[i].type==1)
+			pmmngr_init_region (region[i].startLo, region[i].sizeLo);
+	}
+
+ 
 }

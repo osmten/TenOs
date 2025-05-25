@@ -172,7 +172,7 @@ BEGIN_PM:
     call print_string_pm
 	mov	eax, 0x2BADB002		; multiboot specs say eax should be this
 	mov	ebx, boot_info
-	push ebx
+	push boot_info
     call KERNEL_OFFSET ; Give control to the kernel
     jmp $ ; Stay here when the kernel returns control to us (if ever)
 
