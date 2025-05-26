@@ -48,8 +48,6 @@ void main(struct multiboot_info* bootinfo) {
     init_timer(50);
     init_keyboard();
 
-
-
 	struct memory_region*	region = (struct memory_region*)bootinfo->m_mmap_addr;
 	int size = bootinfo->m_mmap_length/24;
 
@@ -90,7 +88,25 @@ void main(struct multiboot_info* bootinfo) {
 
 		if (region[i].type==1)
 			pmmngr_init_region (region[i].startLo, region[i].sizeLo);
-	}
-
- 
+	} 
+	u32* p = (u32*)pmmngr_alloc_block();
+	kprint("address\n");
+	int_to_ascii(p, sz);
+	kprint(sz);
+	kprint(" ");
+	u32* p1 = (u32*)pmmngr_alloc_block();
+	kprint("address1\n");
+	int_to_ascii(p1, sz);
+	kprint(sz);
+	kprint(" ");
+	u32* p2 = (u32*)pmmngr_alloc_blocks(3);
+	kprint("\naddress2 ");
+	int_to_ascii(p2, sz);
+	kprint(sz);
+	kprint(" ");
+	u32* p3 = (u32*)pmmngr_alloc_block();
+	kprint("\naddress3 ");
+	int_to_ascii(p3, sz);
+	kprint(sz);
+	kprint(" ");
 }

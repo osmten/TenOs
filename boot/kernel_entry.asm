@@ -3,6 +3,7 @@
 ; mov ebx, 0xB8000
 ; mov byte [ebx], 'B' ; should show "X" on screen if protected mode works
 mov eax, [esp+4]
+@ mov esp, 0x20000
 push eax
 call main ; Calls the C function. The linker will know where it is placed in memory
 jmp $
