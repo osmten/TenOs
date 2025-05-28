@@ -103,6 +103,7 @@ stage2_main:
 %include "boot/32bit_print.asm"
 %include "boot/switch_pm.asm"
 %include "boot/memory.asm"
+%include "boot/paging.asm"
 
 
 [bits 16]
@@ -170,6 +171,7 @@ a20wait2:
 BEGIN_PM:
     mov ebx, MSG_PROT_MODE
     call print_string_pm
+	; call EnablePaging
 	mov	eax, 0x2BADB002		; multiboot specs say eax should be this
 	mov	ebx, boot_info
 	push boot_info

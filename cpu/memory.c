@@ -199,3 +199,49 @@ u32 pmmngr_get_block_size () {
 
 	return PMMNGR_BLOCK_SIZE;
 }
+
+void pmmngr_paging_enable(u32 b) {
+    asm volatile (
+        "mov %%cr0, %%eax\n\t"
+        "cmp $1, %0\n\t"
+        "je 1f\n\t"
+        "and $0x7FFFFFFF, %%eax\n\t"  // Clear PG bit (bit 31)
+        "jmp 2f\n"
+        "1:\n\t"
+        "or $0x80000000, %%eax\n\t"   // Set PG bit (bit 31)
+        "2:\n\t"
+        "mov %%eax, %%cr0"
+        : /* no outputs */
+        : "r" (b)
+        : "eax", "memory"
+    );
+}
+
+u32 pmmngr_is_paging() {
+    u32 res;
+    asm volatile (
+        "mov %%cr0, %0"
+        : "=r" (res)
+        : /* no inputs */
+        : "memory"
+    );
+    return (res & 0x80000000) ? 1 : 0;  // Fixed logic (returns 1 if paging enabled)
+}
+void pmmngr_load_PDBR(u32 addr) {
+    asm volatile (
+        "mov %0, %%cr3"
+        : /* no outputs */
+        : "r" (addr)
+        : "memory"
+    );
+}
+u32 pmmngr_get_PDBR() {
+    u32 val;
+    asm volatile (
+        "mov %%cr3, %0"
+        : "=r" (val)
+        : /* no inputs */
+        : "memory"
+    );
+    return val;
+}

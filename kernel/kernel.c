@@ -2,6 +2,7 @@
 #include "../cpu/timer.h"
 #include "../drivers/keyboard.h"
 #include "../cpu/memory.h"
+#include "../cpu/paging.h"
 
 struct multiboot_info {
 
@@ -47,6 +48,7 @@ void main(struct multiboot_info* bootinfo) {
 
     init_timer(50);
     init_keyboard();
+	vmmngr_initialize();
 
 	struct memory_region*	region = (struct memory_region*)bootinfo->m_mmap_addr;
 	int size = bootinfo->m_mmap_length/24;
