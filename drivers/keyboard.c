@@ -3,16 +3,24 @@
 #include "../cpu/isr.h"
 #include "screen.h"
 
+#define GUARD 0xDEADBEEF
+u32 stack_guard[4] = {GUARD,GUARD,GUARD,GUARD};
+
 static void keyboard_callback(registers_t regs) {
+    unsigned char *vidmem = (unsigned char*) VIDEO_ADDRESS;
     /* The PIC leaves us the scancode in port 0x60 */
     u8 scancode = port_byte_in(0x60);
     char *sc_ascii;
     int_to_ascii(scancode, sc_ascii);
-    kprint("Keyboard scancode: ");
+    kprint("Keyboard scancodeC: ");
     kprint(sc_ascii);
     kprint(", ");
     print_letter(scancode);
     kprint("\n");
+    if (stack_guard[0] != GUARD) {
+        vidmem[0] = 'X'; // Visual corruption indicator
+        return;
+    }
 }
 
 void init_keyboard() {
@@ -20,6 +28,7 @@ void init_keyboard() {
 }
 
 void print_letter(u8 scancode) {
+    
     switch (scancode) {
         case 0x0:
             kprint("ERROR");
@@ -154,7 +163,7 @@ void print_letter(u8 scancode) {
 			kprint("\\");
 			break;
 		case 0x2C:
-			kprint("Z");
+			// kprint("Z");
 			break;
 		case 0x2D:
 			kprint("X");

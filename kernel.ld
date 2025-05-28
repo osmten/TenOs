@@ -1,7 +1,7 @@
 MEMORY {
-    text   (rx)  : ORIGIN = 0x2000, LENGTH = 16K
-    data   (rw)  : ORIGIN = 0x6000, LENGTH = 16K
-    stack  (rw)  : ORIGIN = 0xA000, LENGTH = 16K  /* 40KB aligned */
+    text   (rx)  : ORIGIN = 0x2000, LENGTH = 32K
+    data   (rw)  : ORIGIN = 0xA000, LENGTH = 56K
+    stack  (rw)  : ORIGIN = 0x90000, LENGTH = 64K  /* 40KB aligned */
 }
 
 SECTIONS {
@@ -11,7 +11,7 @@ SECTIONS {
         *(.eh_frame)
     } > text
 
-    .data 0x6000 : {
+    .data 0xA000 : {
         *(.data)
         __bss_start = .;
         *(.bss*)
@@ -19,8 +19,7 @@ SECTIONS {
         __bss_end = .;
     } > data
 
-    .stack (NOLOAD) : {
-        . = ALIGN(16);
+    .stack (NOLOAD) : ALIGN(16){ 
         _stack_bottom = .;
         . = . + 0x3FFC;  /* 16KB - 4 bytes (account for alignment) */
         _stack_top = .;

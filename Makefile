@@ -9,6 +9,7 @@ CC = i686-elf-gcc
 GDB = i686-elf-gdb
 # -g: Use debugging symbols in gcc
 CFLAGS = -g 
+LDFLAGS += -T kernel.ld -nostdlib -lgcc -Map=kernel.map
 
 # First rule is run by default
 os-image.bin: boot/bootsect.bin boot/stage2.bin kernel.bin
@@ -17,7 +18,7 @@ os-image.bin: boot/bootsect.bin boot/stage2.bin kernel.bin
 # '--oformat binary' deletes all symbols as a collateral, so we don't need
 # to 'strip' them manually on this case
 kernel.bin: boot/kernel_entry.o ${OBJ}
-	i686-elf-ld -o $@ -T kernel.ld $^ --oformat binary
+	i686-elf-ld -o $@ -T kernel.ld $^ --oformat binary -Map=kernel.map
 
 # Used for debugging purposes
 kernel.elf: boot/kernel_entry.o ${OBJ}
@@ -28,7 +29,7 @@ run: os-image.bin
 
 # Open the connection to qemu and load our kernel-object file with symbols
 debug: os-image.bin kernel.elf
-	qemu-system-i386 -s -fda os-image.bin -d guest_errors,int &
+	qemu-system-i386  -hda os-image.bin -d guest_errors,int &
 	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
 
 # Generic rules for wildcards
