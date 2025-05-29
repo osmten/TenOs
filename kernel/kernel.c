@@ -55,12 +55,14 @@ void main(struct multiboot_info* bootinfo) {
 	u32 memSize = 1024 + bootinfo->m_memoryLo + bootinfo->m_memoryHi*64;
 
 	kprint("\nTotal Size ");
-	char *sz;
+	char sz[5]={0};
 	int_to_ascii(memSize, sz);
 	kprint(sz);
 	kprint(" ");
 
-	init_mem_mngr(0x100000, memSize);
+	init_mem_mngr(0x1FFF000, memSize);
+
+	 char sc_ascii[5]={0};
 
 	for (int i=0; i<size; ++i) {
 
@@ -71,7 +73,7 @@ void main(struct multiboot_info* bootinfo) {
 			break;
 
         kprint("\nddress ");
-        char *sc_ascii;
+       
         int_to_ascii(region[i].startHi, sc_ascii);
         kprint(sc_ascii);
         kprint(" ");
