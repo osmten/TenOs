@@ -1,7 +1,8 @@
 [bits 16]
 [org 0x500]
 
-KERNEL_OFFSET equ 0x2000 ; The same one we used when linking the kernel
+KERNEL_OFFSET equ 0x10000 ; The same one we used when linking the kernel
+KERNEL_JUMP   equ 0x100000
 
 struc multiboot_info
 	.flags				resd	1
@@ -91,6 +92,7 @@ stage2_main:
 
     mov bx, MSG_PROT_MODE
     call print
+	call print_nl
     call switch_to_pm ; disable interrupts, load GDT,  etc. Finally jumps to 'BEGIN_PM'
 
     jmp $
@@ -112,12 +114,20 @@ load_kernel:
     call print
     call print_nl
 
-    mov bx, KERNEL_OFFSET ; Read from disk and store in 0x1000
+    ; Set ES:BX = 0x1000:0x0000 → 0x10000
+    push es                ; Save ES (in case disk_load modifies it)
+    mov ax, 0x1000         ; Segment = 0x1000
+    mov es, ax
+    xor bx, bx             ; Offset = 0x0000 (ES:BX = 0x10000)
+
+    ; mov bx, KERNEL_OFFSET ; Read from disk and store in 0x1000
     mov dh, 17 ; Our future kernel will be larger, make this big
     mov al, 0x04 ;Our kernel is in third sector as first sector is a boot sector and second is stage2 
     mov dl, 0x80 ;[BOOT_DRIVE]
     call disk_load
-    ret
+	pop es
+
+	ret
 
 
 _EnableA20:
@@ -172,10 +182,16 @@ BEGIN_PM:
     mov ebx, MSG_PROT_MODE
     call print_string_pm
 	; call EnablePaging
+
+    mov esi, 0x10000   ; Source (temporary buffer)
+    mov edi, 0x100000  ; Destination (1 MB)
+    mov ecx, (17 * 512) / 4  ; Number of dwords (17 sectors * 512 bytes / 4)
+    rep movsd          ; Copy in 32-bit chunks
+
 	mov	eax, 0x2BADB002		; multiboot specs say eax should be this
 	mov	ebx, boot_info
 	push boot_info
-    call KERNEL_OFFSET ; Give control to the kernel
+    call KERNEL_JUMP ; Give control to the kernel
     jmp $ ; Stay here when the kernel returns control to us (if ever)
 
 

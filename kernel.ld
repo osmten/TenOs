@@ -1,17 +1,18 @@
 MEMORY {
-    text   (rx)  : ORIGIN = 0x2000, LENGTH = 32K
-    data   (rw)  : ORIGIN = 0xA000, LENGTH = 56K
-    stack  (rw)  : ORIGIN = 0x90000, LENGTH = 64K  /* 40KB aligned */
+    text   (rx)  : ORIGIN = 0x100000, LENGTH = 256K  /* Kernel code */
+    data   (rw)  : ORIGIN = 0x140000, LENGTH = 256K  /* Kernel data */
+    stack  (rw)  : ORIGIN = 0x180000, LENGTH = 64K   /* 64KB stack at 1.5MB */
 }
 
+
 SECTIONS {
-    .text 0x2000 : {
+    .text 0x100000 : {
         *(.text)
         *(.rodata*)
         *(.eh_frame)
     } > text
 
-    .data 0xA000 : {
+    .data 0x140000 : {
         *(.data)
         __bss_start = .;
         *(.bss*)
