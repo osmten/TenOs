@@ -119,9 +119,20 @@ load_kernel:
     mov es, ax
     xor bx, bx             ; Offset = 0x0000 (ES:BX = 0x10000)
 
-    ; mov bx, KERNEL_OFFSET ; Read from disk and store in 0x1000
-    mov dh, 17 ; Our future kernel will be larger, make this big
-    mov al, 0x04 ;Our kernel is in third sector as first sector is a boot sector and second is stage2 
+    mov dh, 40 ; Our future kernel will be larger, make this big
+    mov al, 0x04 ;Our kernel is in fourth sector as first sector is a boot sector and the next two is stage2 
+    mov dl, 0x80 ;[BOOT_DRIVE]
+    call disk_load
+	pop es
+
+    ; Set ES:BX = 0x2000:0x0000 → 0x20000
+    push es                ; Save ES (in case disk_load modifies it)
+    mov ax, 0x2000         ; Segment = 0x1000
+    mov es, ax
+    xor bx, bx             ; Offset = 0x0000 (ES:BX = 0x20000)
+
+    mov dh, 7
+    mov al, 0x2c 
     mov dl, 0x80 ;[BOOT_DRIVE]
     call disk_load
 	pop es
@@ -183,7 +194,12 @@ BEGIN_PM:
 
     mov esi, 0x10000   ; Source (temporary buffer)
     mov edi, 0x100000  ; Destination (1 MB)
-    mov ecx, (17 * 512) / 4  ; Number of dwords (17 sectors * 512 bytes / 4)
+    mov ecx, (20 * 512) / 4  ; Number of dwords (17 sectors * 512 bytes / 4)
+    rep movsd          ; Copy in 32-bit chunks
+
+    mov esi, 0x20000   ; Source (temporary buffer)
+    mov edi, 0x105000  ; Destination
+    mov ecx, (7 * 512) / 4  ; Number of dwords (7 sectors * 512 bytes / 4)
     rep movsd          ; Copy in 32-bit chunks
 
 	mov	eax, 0x2BADB002		; multiboot specs say eax should be this
