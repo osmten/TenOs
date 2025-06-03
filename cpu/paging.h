@@ -62,7 +62,7 @@ extern void MmMapPage (void* phys, void* virt);
 extern void vmmngr_initialize ();
 
 //! allocates a page in physical memory
-extern u32 vmmngr_alloc_page (pt_entry*);
+extern u32* vmmngr_alloc_page ();
 
 //! frees a page in physical memory
 extern void vmmngr_free_page (pt_entry* e);

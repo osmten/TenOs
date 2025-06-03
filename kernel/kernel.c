@@ -2,7 +2,7 @@
 #include "../cpu/timer.h"
 #include "../drivers/keyboard.h"
 #include "../cpu/memory.h"
-// #include "../cpu/paging.h"
+#include "../cpu/paging.h"
 
 struct multiboot_info {
 
@@ -48,7 +48,6 @@ void main(struct multiboot_info* bootinfo) {
 
     init_timer(50);
     init_keyboard();
-	// vmmngr_initialize();
 
 	struct memory_region*	region = (struct memory_region*)bootinfo->m_mmap_addr;
 	int size = bootinfo->m_mmap_length/24;
@@ -62,7 +61,7 @@ void main(struct multiboot_info* bootinfo) {
 	kprint(sz);
 	kprint(" ");
 
-	init_mem_mngr(0x1FFF000, memSize);
+	init_mem_mngr(400000, memSize);
 
 	 char sc_ascii[5]={0};
 
@@ -82,22 +81,25 @@ void main(struct multiboot_info* bootinfo) {
 
 		int_to_ascii(region[i].startLo, sc_ascii);
         kprint(sc_ascii);
-        // kprint("\nlength ");
-        // int_to_ascii(region[i].sizeHi, sc_ascii);
-        // kprint(sc_ascii);
-        // kprint(" ");
+        kprint("\nlength ");
+        int_to_ascii(region[i].sizeHi, sc_ascii);
+        kprint(sc_ascii);
+        kprint(" ");
 
-        // int_to_ascii(region[i].sizeLo, sc_ascii);
-        // kprint(sc_ascii);
+        int_to_ascii(region[i].sizeLo, sc_ascii);
+        kprint(sc_ascii);
 
-		// if (region[i].type==1)
-			// pmmngr_init_region (region[i].startLo, region[i].sizeLo);
+		if (region[i].type==1)
+			pmmngr_init_region (region[i].startLo, region[i].sizeLo);
 	} 
-	// u32* p = (u32*)pmmngr_alloc_block();
-	// kprint("address\n");
-	// int_to_ascii(p, sz);
-	// kprint(sz);
-	// kprint(" ");
+
+	vmmngr_initialize();
+
+	u32* p = (u32*)vmmngr_alloc_page();
+	kprint("address\n");
+	int_to_ascii(p, sz);
+	kprint(sz);
+	kprint(" ");
 	// u32* p1 = (u32*)pmmngr_alloc_block();
 	// kprint("address1\n");
 	// int_to_ascii(p1, sz);
@@ -113,8 +115,24 @@ void main(struct multiboot_info* bootinfo) {
 	// int_to_ascii(p3, sz);
 	// kprint(sz);
 	// kprint(" ");
-	   for(int i=0;i<1000;i++)
-	   {
-			kprint("X\n");
-	   }
+	//  struct ptable* p;
+	// for (int i = 0; i < 512; i++)
+	// {
+	// 	p = (struct ptable*)pmmngr_alloc_block();
+	// 	kprint("address\n");
+	// 	int_to_ascii(p, sz);
+	// 	kprint(sz);
+	// 	kprint(" "); 
+    //     memory_set (p, 0, sizeof(struct ptable));
+	// }
+//    struct ptable* table[512];
+//    u32 frame = 0, virt = 0, page_directory_addr = 0;
+   
+//    for (int i = 0; i < 200; i++)
+//    {
+//       table[i] = (struct ptable*)pmmngr_alloc_block();
+//        //! clear page table
+// 	   u32 *p = table[i];
+//        memory_set (table[i], 0, sizeof(struct ptable));
+//    }
 }
