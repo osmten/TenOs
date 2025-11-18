@@ -30,7 +30,7 @@ void init_mem_mngr(u32 addr, u32 size)
 	mem_mngr_used_blocks	=	mem_mngr_max_blocks;
 
 	//! By default, all of memory is in use
-	memory_set(mem_mngr, 0xf, pmmngr_get_block_count() / PMMNGR_BLOCKS_PER_BYTE );
+	memory_set((u8*)mem_mngr, 0xf, pmmngr_get_block_count() / PMMNGR_BLOCKS_PER_BYTE );
 }
 
 void pmmngr_init_region (u32 base, u32 size) {
@@ -164,7 +164,7 @@ void*	pmmngr_alloc_blocks (u32 size) {
 	return (void*)addr;
 }
 
-void	pmmngr_free_blocks (void* p, u32 size) {
+void pmmngr_free_blocks (void* p, u32 size) {
 
 	u32 addr = (u32)p;
 	int frame = addr / PMMNGR_BLOCK_SIZE;

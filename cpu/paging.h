@@ -56,43 +56,44 @@ struct pdirectory {
 //============================================================================
 
 //! maps phys to virtual address
-extern void MmMapPage (void* phys, void* virt);
+// extern void MmMapPage (void* phys, void* virt);
 
 //! initialize the memory manager
-extern void vmmngr_initialize ();
+void vmmngr_initialize (void);
 
 //! allocates a page in physical memory
-extern u32* vmmngr_alloc_page ();
+u32* vmmngr_alloc_page (void);
 
 //! frees a page in physical memory
-extern void vmmngr_free_page (pt_entry* e);
+void vmmngr_free_page (pt_entry* e);
 
 //! switch to a new page directory
-extern u32 vmmngr_switch_pdirectory (struct pdirectory*);
+u32 vmmngr_switch_pdirectory (struct pdirectory*);
 
 //! get current page directory
-extern struct pdirectory* vmmngr_get_directory ();
+struct pdirectory* vmmngr_get_directory (void);
 
 //! flushes a cached translation lookaside buffer (TLB) entry
-extern void vmmngr_flush_tlb_entry (virtual_addr addr);
+void vmmngr_flush_tlb_entry (virtual_addr addr);
+void vmmngr_map_page (void* phys, void* virt);
 
 //! clears a page table
-extern void vmmngr_ptable_clear (struct ptable* p);
+// extern void vmmngr_ptable_clear (struct ptable* p);
 
 //! convert virtual address to page table index
-extern u32 vmmngr_ptable_virt_to_index (virtual_addr addr);
+// extern u32 vmmngr_ptable_virt_to_index (virtual_addr addr);
 
 //! get page entry from page table
-extern pt_entry* vmmngr_ptable_lookup_entry (struct ptable* p,virtual_addr addr);
+pt_entry* vmmngr_ptable_lookup_entry (struct ptable* p,virtual_addr addr);
 
 //! convert virtual address to page directory index
-extern u32 vmmngr_pdirectory_virt_to_index (virtual_addr addr);
+// extern u32 vmmngr_pdirectory_virt_to_index (virtual_addr addr);
 
 //! clears a page directory table
-extern void vmmngr_pdirectory_clear (struct pdirectory* dir);
+// extern void vmmngr_pdirectory_clear (struct pdirectory* dir);
 
 //! get directory entry from directory table
-extern pd_entry* vmmngr_pdirectory_lookup_entry (struct pdirectory* p, virtual_addr addr);
+pd_entry* vmmngr_pdirectory_lookup_entry (struct pdirectory* p, virtual_addr addr);
 
 //============================================================================
 //    INTERFACE OBJECT CLASS DEFINITIONS

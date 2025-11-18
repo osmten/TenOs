@@ -51,7 +51,7 @@ typedef uint32_t pd_entry;
 //============================================================================
 
 //! sets a flag in the page table entry
-extern void pd_entry_add_attrib (pd_entry* e, uint32_t attrib);
+void pd_entry_add_attrib (pd_entry* e, uint32_t attrib);
 
 //! clears a flag in the page table entry
 extern void pd_entry_del_attrib (pd_entry* e, uint32_t attrib);
@@ -72,7 +72,7 @@ extern u32 pd_entry_is_4mb (pd_entry);
 extern u32 pd_entry_is_writable (pd_entry e);
 
 //! get page table entry frame address
-extern u32 pd_entry_pfn (pd_entry e);
+uint32_t pd_entry_pfn (pd_entry e);
 
 //! enable global pages
 extern void pd_entry_enable_global (pd_entry e);

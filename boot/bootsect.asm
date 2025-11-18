@@ -1,6 +1,39 @@
 ; Identical to lesson 13's boot sector, but the %included files have new paths
 [org 0x7c00]
 
+
+; ===== Jump over BPB =====
+jmp short entry
+nop
+
+; ===== BIOS Parameter Block (BPB) =====
+; This describes the FAT12 filesystem (even though kernel is loaded separately)
+OEMName:           db "MYOS1.0 "      ; 8 bytes
+BytesPerSector:    dw 512             ; Standard sector size
+SectorsPerCluster: db 1               ; 1 sector per cluster (512 bytes)
+ReservedSectors:   dw 112             ; Sectors 0-111 reserved (boot + stage2 + kernel)
+NumFATs:           db 2               ; Two FAT copies
+RootEntries:       dw 512             ; 512 files max in root
+TotalSectors:      dw 0               ; 0 = use TotalSectorsBig
+MediaType:         db 0xF8            ; 0xF8 = hard disk
+SectorsPerFAT:     dw 272             ; 272 sectors per FAT (calculated below)
+SectorsPerTrack:   dw 63              ; HDD geometry
+NumHeads:          dw 16              ; HDD geometry
+HiddenSectors:     dd 0               ; No hidden sectors
+TotalSectorsBig:   dd 4194304         ; 2 GB = 4,194,304 sectors
+
+; ===== Extended BPB =====
+DriveNumber:       db 0x80            ; Hard disk
+Reserved1:         db 0
+BootSignature:     db 0x29            ; Extended boot signature
+VolumeSerial:      dd 0x12345678      ; Random serial
+VolumeLabel:       db "MY OS DISK "   ; 11 bytes
+FilesystemType:    db "FAT12   "      ; 8 bytes
+
+; ===== Boot Code =====
+
+entry:
+
 STAGE_2_OFFSET equ 0x500
 
     mov [BOOT_DRIVE], dl 

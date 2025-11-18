@@ -3,9 +3,12 @@
 #include "../drivers/keyboard.h"
 #include "../cpu/memory.h"
 #include "../cpu/paging.h"
+#include "../drivers/screen.h"
+#include "../cpu/idt.h"
+#include "../drivers/ports.h"
+#include "../drivers/fs.h"
 
 struct multiboot_info {
-
 	u32	m_flags;
 	u32	m_memoryLo;
 	u32	m_memoryHi;
@@ -31,7 +34,6 @@ struct multiboot_info {
 };
 
 struct memory_region {
-
 	u32	startLo;
 	u32	startHi;
 	u32	sizeLo;
@@ -40,16 +42,18 @@ struct memory_region {
 	u32	acpi_3_0;
 };
 
+void main(struct multiboot_info* bootinfo){
 
-void main(struct multiboot_info* bootinfo) {
-    kprint("\nKernel loaded:\n");
+	kprint("kernel loaded\n");
+    asm volatile("cli");
     isr_install();
-    asm volatile("sti");
 
     init_timer(50);
     init_keyboard();
 
-	struct memory_region*	region = (struct memory_region*)bootinfo->m_mmap_addr;
+    asm volatile("sti");
+
+	struct memory_region* region = (struct memory_region*)bootinfo->m_mmap_addr;
 	int size = bootinfo->m_mmap_length/24;
 
 	//! get memory size in KB
@@ -63,7 +67,7 @@ void main(struct multiboot_info* bootinfo) {
 
 	init_mem_mngr(400000, memSize);
 
-	 char sc_ascii[5]={0};
+	char sc_ascii[5]={0};
 
 	for (int i=0; i<size; ++i) {
 
@@ -91,15 +95,42 @@ void main(struct multiboot_info* bootinfo) {
 
 		if (region[i].type==1)
 			pmmngr_init_region (region[i].startLo, region[i].sizeLo);
-	} 
+	}
 
-	vmmngr_initialize();
+	kprint("\n");
 
-	u32* p = (u32*)vmmngr_alloc_page();
-	kprint("address\n");
-	int_to_ascii(p, sz);
-	kprint(sz);
-	kprint(" ");
+	// char arr[512];
+    // read_sector(200, arr);
+
+
+    // kprint("First 16 bytes as string: \n");
+    // for(int i = 0; i < 16; i++) {
+    //     if(arr[i] == 0) break;
+	// 	char temp[5];
+	// 	int_to_ascii(arr[i], temp);
+    //     kprint(temp);
+    // }
+    kprint('\n');
+
+	fat12_init();
+	fat12_create("OSAMAOS.txt", 100);
+	char *name = "My name is Osama\0";
+
+	fat12_write(fat12_open("OSAMAOS.txt"), name, 100);
+
+	char arr[512] = {0};
+
+	fat12_read(fat12_open("OSAMAOS.txt"), arr, 100);
+
+	kprint(arr);
+	
+	// vmmngr_initialize();
+
+	// u32* p = (u32*)vmmngr_alloc_page();
+	// kprint("address\n");
+	// int_to_ascii(p, sz);
+	// kprint(sz);
+	// kprint(" ");
 	// u32* p1 = (u32*)pmmngr_alloc_block();
 	// kprint("address1\n");
 	// int_to_ascii(p1, sz);

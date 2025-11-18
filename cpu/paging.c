@@ -13,7 +13,7 @@
 // #include <string.h>
 #include "paging.h"
 #include "memory.h"
-
+#include "../kernel/util.h"
 //============================================================================
 //    IMPLEMENTATION PRIVATE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
 //============================================================================
@@ -41,7 +41,7 @@
 //============================================================================
 
 //! current directory table
-struct pdirectory*		_cur_directory=0;
+struct pdirectory* _cur_directory=0;
 
 //! current page directory base register
 u32	_cur_pdbr=0;
@@ -119,6 +119,8 @@ u32* vmmngr_alloc_page () {
 
 void vmmngr_free_page (pt_entry* e) {
 
+   if(!e)
+      return;
 	void* p = (void*)pt_entry_pfn (*e);
 	if (p)
 		pmmngr_free_block (p);
@@ -126,9 +128,12 @@ void vmmngr_free_page (pt_entry* e) {
 	pt_entry_del_attrib (e, I86_PTE_PRESENT);
 }
 
-void vmmngr_map_page (void* phys, void* virt) {
+void vmmngr_map_page(void* phys, void* virt) {
 
-   //! get page directory
+   if(!phys || !virt)
+      return;
+   return;
+   // ! get page directory
    struct pdirectory* pageDirectory = vmmngr_get_directory ();
 
    //! get page table
@@ -141,7 +146,7 @@ void vmmngr_map_page (void* phys, void* virt) {
          return;
 
       //! clear page table
-      memory_set (table, 0, sizeof(struct ptable));
+      memory_set ((u8*)table, 0, sizeof(struct ptable));
 
       //! create a new entry
       pd_entry* entry =
@@ -166,6 +171,7 @@ void vmmngr_map_page (void* phys, void* virt) {
 
 void vmmngr_initialize () {
    //! allocate default page table
+   return;
    struct ptable* table[5];
    u32 frame = 0, virt = 0, page_directory_addr = 0;
    
@@ -173,7 +179,7 @@ void vmmngr_initialize () {
    {
       table[i] = (struct ptable*)pmmngr_alloc_block();
        //! clear page table
-      memory_set (table[i], 0, sizeof (struct ptable));
+      memory_set ((u8*)table[i], 0, sizeof (struct ptable));
    }
    
    // Idenitity mapped
@@ -200,7 +206,7 @@ void vmmngr_initialize () {
       return;
 
    //! clear directory table and set it as current
-   memory_set (dir, 0, sizeof (struct pdirectory));
+   memory_set ((u8*)dir, 0, sizeof (struct pdirectory));
 
    for(int i = 0; i < 5; i++)
    {

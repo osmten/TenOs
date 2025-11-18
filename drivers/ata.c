@@ -2,10 +2,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// External print functions (from your kernel)
-extern void print(const char *str);
-extern void print_hex(uint32_t num);
-
 // Port I/O helper functions
 static inline uint8_t inb(uint16_t port) {
     uint8_t result;
@@ -66,14 +62,14 @@ static bool ata_check_error(void) {
     
     if (status & ATA_SR_ERR) {
         uint8_t error = inb(ATA_PRIMARY_IO + ATA_REG_ERROR);
-        // print("ATA Error: 0x");
-        // print_hex(error);
-        // print("\n");
+        kprint("ATA Error: 0x");
+        kprint(&error);
+        kprint("\n");
         return true;
     }
     
     if (status & ATA_SR_DF) {
-        // print("ATA Drive Fault!\n");
+        kprint("ATA Drive Fault!\n");
         return true;
     }
     
@@ -82,7 +78,7 @@ static bool ata_check_error(void) {
 
 // Initialize ATA controller
 void ata_init(void) {
-    // print("Initializing ATA controller...\n");
+    kprint("Initializing ATA controller...\n");
     
     // Software reset (optional but recommended)
     outb(ATA_PRIMARY_CONTROL, 0x04);  // Set SRST bit
@@ -92,7 +88,7 @@ void ata_init(void) {
     // Wait for drive to be ready
     ata_wait_ready();
     
-    // print("ATA controller initialized\n");
+    kprint("ATA controller initialized\n");
 }
 
 // Identify drive (optional - gets drive information)
@@ -176,9 +172,9 @@ void ata_read_sector(uint32_t lba, uint8_t *buffer) {
     
     // Check for errors
     if (ata_check_error()) {
-        // print("Error reading sector ");
+        kprint("Error reading sector ");
         // print_hex(lba);
-        // print("\n");
+        kprint("\n");
         return;
     }
     
@@ -232,9 +228,9 @@ void ata_write_sector(uint32_t lba, const uint8_t *buffer) {
     
     // Check for errors
     if (ata_check_error()) {
-        // print("Error writing sector ");
-        // print_hex(lba);
-        // print("\n");
+        kprint("Error writing sector ");
+        kprint(&lba);
+        kprint("\n");
     }
 }
 

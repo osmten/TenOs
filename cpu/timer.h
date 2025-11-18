@@ -2,7 +2,9 @@
 #define TIMER_H
 
 #include "../kernel/util.h"
-
-void init_timer(u32 freq);
+#include "isr.h"
+ 
+void timer_callback(registers_t *regs);
+void init_timer(int freq);
 
 #endif

@@ -60,7 +60,7 @@ inline u32 pd_entry_is_writable (pd_entry e) {
 	return e & I86_PDE_WRITABLE;
 }
 
-inline u32 pd_entry_pfn (pd_entry e) {
+inline uint32_t pd_entry_pfn (pd_entry e) {
 	return e & I86_PDE_FRAME;
 }
 
