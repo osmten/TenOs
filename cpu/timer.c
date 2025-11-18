@@ -1,7 +1,4 @@
 #include "timer.h"
-#include "../drivers/ports.h"
-#include "isr.h"
-#include "../drivers/screen.h"
 
 u32 tick = 0;
 

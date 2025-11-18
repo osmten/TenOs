@@ -1,25 +1,23 @@
 #include "ata.h"
-#include <stdint.h>
-#include <stdbool.h>
 
 // Port I/O helper functions
-static inline uint8_t inb(uint16_t port) {
-    uint8_t result;
+static inline u8 inb(u16 port) {
+    u8 result;
     __asm__ volatile("inb %1, %0" : "=a"(result) : "Nd"(port));
     return result;
 }
 
-static inline void outb(uint16_t port, uint8_t value) {
+static inline void outb(u16 port, u8 value) {
     __asm__ volatile("outb %0, %1" : : "a"(value), "Nd"(port));
 }
 
-static inline uint16_t inw(uint16_t port) {
-    uint16_t result;
+static inline u16 inw(u16 port) {
+    u16 result;
     __asm__ volatile("inw %1, %0" : "=a"(result) : "Nd"(port));
     return result;
 }
 
-static inline void outw(uint16_t port, uint16_t value) {
+static inline void outw(u16 port, u16 value) {
     __asm__ volatile("outw %0, %1" : : "a"(value), "Nd"(port));
 }
 
@@ -34,7 +32,7 @@ static inline void io_wait(void) {
 
 // Wait until BSY (busy) bit is clear
 static void ata_wait_bsy(void) {
-    uint8_t status;
+    u8 status;
     do {
         status = inb(ATA_PRIMARY_IO + ATA_REG_STATUS);
     } while (status & ATA_SR_BSY);
@@ -42,7 +40,7 @@ static void ata_wait_bsy(void) {
 
 // Wait until DRQ (data request) bit is set
 static void ata_wait_drq(void) {
-    uint8_t status;
+    u8 status;
     do {
         status = inb(ATA_PRIMARY_IO + ATA_REG_STATUS);
     } while (!(status & ATA_SR_DRQ));
@@ -50,7 +48,7 @@ static void ata_wait_drq(void) {
 
 // Wait until drive is ready
 static void ata_wait_ready(void) {
-    uint8_t status;
+    u8 status;
     do {
         status = inb(ATA_PRIMARY_IO + ATA_REG_STATUS);
     } while (!(status & ATA_SR_DRDY) || (status & ATA_SR_BSY));
@@ -58,10 +56,10 @@ static void ata_wait_ready(void) {
 
 // Check for errors
 static bool ata_check_error(void) {
-    uint8_t status = inb(ATA_PRIMARY_IO + ATA_REG_STATUS);
+    u8 status = inb(ATA_PRIMARY_IO + ATA_REG_STATUS);
     
     if (status & ATA_SR_ERR) {
-        uint8_t error = inb(ATA_PRIMARY_IO + ATA_REG_ERROR);
+        u8 error = inb(ATA_PRIMARY_IO + ATA_REG_ERROR);
         kprint("ATA Error: 0x");
         kprint(&error);
         kprint("\n");
@@ -110,7 +108,7 @@ int ata_identify(void) {
     io_wait();
     
     // Check if drive exists
-    uint8_t status = inb(ATA_PRIMARY_IO + ATA_REG_STATUS);
+    u8 status = inb(ATA_PRIMARY_IO + ATA_REG_STATUS);
     if (status == 0) {
         // print("No drive detected\n");
         return -1;
@@ -128,14 +126,14 @@ int ata_identify(void) {
     ata_wait_drq();
     
     // Read 256 words (512 bytes) of identification data
-    uint16_t identify_data[256];
+    u16 identify_data[256];
     for (int i = 0; i < 256; i++) {
         identify_data[i] = inw(ATA_PRIMARY_IO + ATA_REG_DATA);
     }
     
     // Extract useful information
     // Word 60-61: Total addressable sectors (28-bit LBA)
-    uint32_t sectors = *(uint32_t*)&identify_data[60];
+    u32 sectors = *(u32*)&identify_data[60];
     
     // print("Drive detected:\n");
     // print("  Total sectors: ");
@@ -148,7 +146,7 @@ int ata_identify(void) {
 }
 
 // Read a single sector using 28-bit LBA
-void ata_read_sector(uint32_t lba, uint8_t *buffer) {
+void ata_read_sector(u32 lba, u8 *buffer) {
     // Wait until drive is ready
     ata_wait_bsy();
     
@@ -160,9 +158,9 @@ void ata_read_sector(uint32_t lba, uint8_t *buffer) {
     outb(ATA_PRIMARY_IO + ATA_REG_SECCOUNT, 1);
     
     // Send LBA (bits 0-23)
-    outb(ATA_PRIMARY_IO + ATA_REG_LBA_LOW, (uint8_t)(lba & 0xFF));
-    outb(ATA_PRIMARY_IO + ATA_REG_LBA_MID, (uint8_t)((lba >> 8) & 0xFF));
-    outb(ATA_PRIMARY_IO + ATA_REG_LBA_HIGH, (uint8_t)((lba >> 16) & 0xFF));
+    outb(ATA_PRIMARY_IO + ATA_REG_LBA_LOW, (u8)(lba & 0xFF));
+    outb(ATA_PRIMARY_IO + ATA_REG_LBA_MID, (u8)((lba >> 8) & 0xFF));
+    outb(ATA_PRIMARY_IO + ATA_REG_LBA_HIGH, (u8)((lba >> 16) & 0xFF));
     
     // Send READ SECTORS command
     outb(ATA_PRIMARY_IO + ATA_REG_COMMAND, ATA_CMD_READ_PIO);
@@ -179,7 +177,7 @@ void ata_read_sector(uint32_t lba, uint8_t *buffer) {
     }
     
     // Read 256 words (512 bytes)
-    uint16_t *buf16 = (uint16_t*)buffer;
+    u16 *buf16 = (u16*)buffer;
     for (int i = 0; i < 256; i++) {
         buf16[i] = inw(ATA_PRIMARY_IO + ATA_REG_DATA);
     }
@@ -189,7 +187,7 @@ void ata_read_sector(uint32_t lba, uint8_t *buffer) {
 }
 
 // Write a single sector using 28-bit LBA
-void ata_write_sector(uint32_t lba, const uint8_t *buffer) {
+void ata_write_sector(u32 lba, const u8 *buffer) {
     // Wait until drive is ready
     ata_wait_bsy();
     
@@ -201,9 +199,9 @@ void ata_write_sector(uint32_t lba, const uint8_t *buffer) {
     outb(ATA_PRIMARY_IO + ATA_REG_SECCOUNT, 1);
     
     // Send LBA (bits 0-23)
-    outb(ATA_PRIMARY_IO + ATA_REG_LBA_LOW, (uint8_t)(lba & 0xFF));
-    outb(ATA_PRIMARY_IO + ATA_REG_LBA_MID, (uint8_t)((lba >> 8) & 0xFF));
-    outb(ATA_PRIMARY_IO + ATA_REG_LBA_HIGH, (uint8_t)((lba >> 16) & 0xFF));
+    outb(ATA_PRIMARY_IO + ATA_REG_LBA_LOW, (u8)(lba & 0xFF));
+    outb(ATA_PRIMARY_IO + ATA_REG_LBA_MID, (u8)((lba >> 8) & 0xFF));
+    outb(ATA_PRIMARY_IO + ATA_REG_LBA_HIGH, (u8)((lba >> 16) & 0xFF));
     
     // Send WRITE SECTORS command
     outb(ATA_PRIMARY_IO + ATA_REG_COMMAND, ATA_CMD_WRITE_PIO);
@@ -212,7 +210,7 @@ void ata_write_sector(uint32_t lba, const uint8_t *buffer) {
     ata_wait_drq();
     
     // Write 256 words (512 bytes)
-    const uint16_t *buf16 = (const uint16_t*)buffer;
+    const u16 *buf16 = (const u16*)buffer;
     for (int i = 0; i < 256; i++) {
         outw(ATA_PRIMARY_IO + ATA_REG_DATA, buf16[i]);
     }
@@ -235,24 +233,24 @@ void ata_write_sector(uint32_t lba, const uint8_t *buffer) {
 }
 
 // Read multiple sectors (for efficiency)
-void ata_read_sectors(uint32_t lba, uint8_t sector_count, uint8_t *buffer) {
-    for (uint8_t i = 0; i < sector_count; i++) {
+void ata_read_sectors(u32 lba, u8 sector_count, u8 *buffer) {
+    for (u8 i = 0; i < sector_count; i++) {
         ata_read_sector(lba + i, buffer + (i * 512));
     }
 }
 
 // Write multiple sectors
-void ata_write_sectors(uint32_t lba, uint8_t sector_count, const uint8_t *buffer) {
-    for (uint8_t i = 0; i < sector_count; i++) {
+void ata_write_sectors(u32 lba, u8 sector_count, const u8 *buffer) {
+    for (u8 i = 0; i < sector_count; i++) {
         ata_write_sector(lba + i, buffer + (i * 512));
     }
 }
 
 // Wrapper functions for FAT12 driver compatibility
-void read_sector(uint32_t lba, uint8_t *buffer) {
+void read_sector(u32 lba, u8 *buffer) {
     ata_read_sector(lba, buffer);
 }
 
-void write_sector(uint32_t lba, const uint8_t *buffer) {
+void write_sector(u32 lba, const u8 *buffer) {
     ata_write_sector(lba, buffer);
 }

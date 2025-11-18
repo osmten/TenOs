@@ -1,7 +1,4 @@
 #include "screen.h"
-#include "../drivers/ports.h"
-#include "../kernel/util.h"
-
 
 /**********************************************************
  * Public Kernel API functions                            *

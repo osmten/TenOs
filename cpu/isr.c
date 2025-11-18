@@ -1,8 +1,4 @@
 #include "isr.h"
-#include "idt.h"
-#include "../drivers/screen.h"
-#include "../kernel/util.h"
-#include "../drivers/ports.h"
 
 isr_t interrupt_handlers[256] = {0};
 

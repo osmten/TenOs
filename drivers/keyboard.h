@@ -1,5 +1,7 @@
-#include "../cpu/types.h"
-#include "../cpu/isr.h"
+#include <lib/lib.h>
+#include "ports.h"
+#include "screen.h"
+#include <cpu/isr.h>
 
 void init_keyboard();
 void print_letter(u8 scancode);

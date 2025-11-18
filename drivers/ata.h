@@ -1,7 +1,8 @@
 #ifndef ATA_H
 #define ATA_H
 
-#include <stdint.h>
+#include <lib/lib.h>
+#include <stdbool.h>
 
 // ATA Status Register bits
 #define ATA_SR_BSY      0x80    // Busy
@@ -60,12 +61,12 @@
 
 // Function prototypes
 void ata_init(void);
-void ata_read_sector(uint32_t lba, uint8_t *buffer);
-void ata_write_sector(uint32_t lba, const uint8_t *buffer);
-void ata_read_sectors(uint32_t lba, uint8_t sector_count, uint8_t *buffer);
-void ata_write_sectors(uint32_t lba, uint8_t sector_count, const uint8_t *buffer);
+void ata_read_sector(u32 lba, u8 *buffer);
+void ata_write_sector(u32 lba, const u8 *buffer);
+void ata_read_sectors(u32 lba, u8 sector_count, u8 *buffer);
+void ata_write_sectors(u32 lba, u8 sector_count, const u8 *buffer);
 int ata_identify(void);
-void read_sector(uint32_t lba, uint8_t *buffer);
-void write_sector(uint32_t lba, const uint8_t *buffer);
+void read_sector(u32 lba, u8 *buffer);
+void write_sector(u32 lba, const u8 *buffer);
 
 #endif

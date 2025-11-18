@@ -1,12 +1,4 @@
-#include "../cpu/isr.h"
-#include "../cpu/timer.h"
-#include "../drivers/keyboard.h"
-#include "../cpu/memory.h"
-#include "../cpu/paging.h"
-#include "../drivers/screen.h"
-#include "../cpu/idt.h"
-#include "../drivers/ports.h"
-#include "../drivers/fs.h"
+#include "kernel.h"
 
 struct multiboot_info {
 	u32	m_flags;

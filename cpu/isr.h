@@ -1,7 +1,9 @@
 #ifndef ISR_H
 #define ISR_H
 
-#include "types.h"
+#include <lib/lib.h>
+#include <drivers/ports.h>
+#include <drivers/screen.h>
 
 /* ISRs reserved for CPU exceptions */
 extern void isr0(void);
