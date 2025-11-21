@@ -9,6 +9,33 @@ const char sc_ascii[] = { '?', '?', '1', '2', '3', '4', '5', '6',
         'H', 'J', 'K', 'L', ';', '\'', '`', '?', '\\', 'Z', 'X', 'C', 'V', 
         'B', 'N', 'M', ',', '.', '/', '?', '?', '?', ' '};
 
+
+static command_t commands[] = {
+    {"help",    "Show this help",           cmd_help},
+    // {"clear",   "Clear screen",             cmd_clear},
+    // {"echo",    "Echo text",                cmd_echo},
+    // {"ls",      "List files",               cmd_ls},
+    // {"cat",     "Display file contents",    cmd_cat},
+    // {"meminfo", "Show memory info",         cmd_meminfo},
+    {NULL, NULL, NULL}  // Terminator
+};
+
+
+static void cmd_help(const char* args)
+{
+    kprint("\nAvailable Commands \n");
+
+    for (int i = 0; i < 1 /*commands[i].name != NULL*/; i++)
+    {
+        kprint(" Name ->  ");
+        kprint(commands[i].name);
+        kprint("        ");
+        kprint("Description -> ");
+        kprint(commands[i].description);
+        kprint("\n");
+    }
+}
+
 int shell_init(void)
 {
     kprint("\n");
@@ -17,6 +44,32 @@ int shell_init(void)
     kprint("  Type 'help' for available commands\n");
     kprint("========================================\n");
     kprint("\n");
+}
+
+int process_cmd(char *buff)
+{
+    char cmd[20] = {0};
+    int i = 0;
+
+    while(*buff == ' ')
+        buff++;
+    
+    while(*buff != ' ' && *buff != NULL) {
+        cmd[i] = *buff;
+        i++;
+        buff++;
+    }
+    cmd[i] = '\0';
+    if (memcmp(cmd, "HELP", 4) == 0)
+    {
+        cmd_help(buff);
+    }
+    else {
+        kprint("\nTo be implemented cmd -> ");
+        kprint(cmd);
+        kprint("\n");
+    }
+    return 0;
 }
 
 int shell_process()
@@ -29,7 +82,9 @@ int shell_process()
             switch (scancode)
             {
                 case ENTER_KEY:
-                    // process_cmd();
+                    process_cmd(shell_buff);
+                    shell_buff[0] = '\0';
+                    idx = 0;
                     return;
                     break;
 
