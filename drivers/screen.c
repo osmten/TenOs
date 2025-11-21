@@ -65,9 +65,16 @@ int print_char(char c, int col, int row, char attr) {
     if (c == '\n') {
         row = get_offset_row(offset);
         offset = get_offset(0, row+1);
-    } else {
+    } 
+    else if(c == '\b')
+    {
+        offset -= 2; 
+        vidmem[offset] = ' ';
+        vidmem[offset + 1] = 0x0F;     
+    }
+    else {
         vidmem[offset] = c;
-        vidmem[offset+1] = attr;
+        vidmem[offset + 1] = attr;
         offset += 2;
     }
 

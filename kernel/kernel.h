@@ -11,5 +11,6 @@
 #include <cpu/idt.h>
 #include <drivers/ports.h>
 #include <fs/fs.h>
+#include "shell.h"
 
 #endif

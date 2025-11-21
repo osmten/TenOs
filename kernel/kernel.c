@@ -105,16 +105,23 @@ void main(struct multiboot_info* bootinfo){
     kprint('\n');
 
 	fat12_init();
-	fat12_create("OSAMAOS.txt", 100);
-	char *name = "My name is Osama\0";
+	shell_init();
+	
+	while(1)
+	{
+		kprint("\nTenOS> ");
+		shell_process();
+	}
+	// fat12_create("OSAMAOS.txt", 100);
+	// char *name = "My name is Osama\0";
 
-	fat12_write(fat12_open("OSAMAOS.txt"), name, 100);
+	// fat12_write(fat12_open("OSAMAOS.txt"), name, 100);
 
-	char arr[512] = {0};
+	// char arr[512] = {0};
 
-	fat12_read(fat12_open("OSAMAOS.txt"), arr, 100);
+	// fat12_read(fat12_open("OSAMAOS.txt"), arr, 100);
 
-	kprint(arr);
+	// kprint(arr);
 	
 	// vmmngr_initialize();
 
