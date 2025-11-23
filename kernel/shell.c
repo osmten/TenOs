@@ -11,12 +11,12 @@ const char sc_ascii[] = { '?', '?', '1', '2', '3', '4', '5', '6',
 
 
 static command_t commands[] = {
-    {"help",    "Show this help",           cmd_help},
-    // {"clear",   "Clear screen",             cmd_clear},
-    // {"echo",    "Echo text",                cmd_echo},
-    // {"ls",      "List files",               cmd_ls},
-    // {"cat",     "Display file contents",    cmd_cat},
-    // {"meminfo", "Show memory info",         cmd_meminfo},
+    {"help",    "show this help",           cmd_help},
+    {"clear",   "Clear screen",             cmd_help},
+    {"echo",    "Echo text",                cmd_help},
+    {"ls",      "List files",               cmd_help},
+    {"cat",     "Display file contents",    cmd_help},
+    {"meminfo", "Show memory info",         cmd_help},
     {NULL, NULL, NULL}  // Terminator
 };
 
@@ -25,7 +25,17 @@ static void cmd_help(const char* args)
 {
     kprint("\nAvailable Commands \n");
 
-    for (int i = 0; i < 1 /*commands[i].name != NULL*/; i++)
+    kprint("DEBUG: First command name address: ");
+    char hex[16];
+    int_to_ascii((int)commands[0].name, hex);
+    kprint(hex);
+    kprint("\n");
+    
+    kprint("DEBUG: First command name: ");
+    kprint(commands[0].name);
+    kprint("\n\n");
+
+    for (int i = 0; commands[i].name != NULL; i++)
     {
         kprint(" Name ->  ");
         kprint(commands[i].name);

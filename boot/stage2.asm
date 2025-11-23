@@ -114,49 +114,36 @@ load_kernel:
     call print
     call print_nl
 
-    ; Set ES:BX = 0x1000:0x0000 → 0x10000
-    ; push es                ; Save ES (in case disk_load modifies it)
-    ; mov ax, 0x1000         ; Segment = 0x1000
+    ; push es
+    ; mov ax, 0x1000
     ; mov es, ax
-    ; xor bx, bx             ; Offset = 0x0000 (ES:BX = 0x10000)
-
-    ; mov dh, 40 ; Our future kernel will be larger, make this big
-    ; mov al, 0x04 ;Our kernel is in fourth sector as first sector is a boot sector and the next two is stage2 
-    ; mov dl, 0x80 ;[BOOT_DRIVE]
+    ; xor bx, bx
+    ; mov dh, 55     ; ← 55 sectors (27.5KB) for .text + .rodata
+    ; mov al, 0x04
+    ; mov dl, 0x80
     ; call disk_load
-	; pop es
+    ; pop es
+
+    ;  push es
+    ; mov ax, 0x2000  
+    ; mov es, ax
+    ; xor bx, bx
+    ; mov dh, 50    ; ← 16 sectors (8KB) for .data + .bss + padding
+    ; mov al, 0x3b   ; ← Start from sector 59 (4 + 55)
+    ; mov dl, 0x80
+    ; call disk_load
+    ; pop es
+
     push es
     mov ax, 0x1000
     mov es, ax
     xor bx, bx
-    mov dh, 55     ; ← 55 sectors (27.5KB) for .text + .rodata
-    mov al, 0x04
+    mov dh, 98     ; 73 sectors = 37,376 bytes
+    mov al, 0x04   ; Start from sector 4
     mov dl, 0x80
     call disk_load
     pop es
-
-
-    ; ; Set ES:BX = 0x2000:0x0000 → 0x20000
-    ; push es                ; Save ES (in case disk_load modifies it)
-    ; mov ax, 0x2000         ; Segment = 0x1000
-    ; mov es, ax
-    ; xor bx, bx             ; Offset = 0x0000 (ES:BX = 0x20000)
-
-    ; mov dh, 7
-    ; mov al, 0x2c 
-    ; mov dl, 0x80 ;[BOOT_DRIVE]
-    ; call disk_load
-	; pop es
-
-     push es
-    mov ax, 0x2000  
-    mov es, ax
-    xor bx, bx
-    mov dh, 16     ; ← 16 sectors (8KB) for .data + .bss + padding
-    mov al, 0x3b   ; ← Start from sector 59 (4 + 55)
-    mov dl, 0x80
-    call disk_load
-    pop es
+    ret
 
 	ret
 
@@ -212,31 +199,26 @@ a20wait2:
 BEGIN_PM:
     mov ebx, MSG_PROT_MODE
     call print_string_pm
-	; call EnablePaging
 
-    ; mov esi, 0x10000   ; Source (temporary buffer)
-    ; mov edi, 0x100000  ; Destination (1 MB)
-    ; mov ecx, (20 * 512) / 4  ; Number of dwords (17 sectors * 512 bytes / 4)
-    ; rep movsd          ; Copy in 32-bit chunks
+    ; mov esi, 0x10000
+    ; mov edi, 0x100000
+    ; mov ecx, (55 * 512) / 4  ; ← Match the sector count
+    ; rep movsd
 
-    ; mov esi, 0x20000   ; Source (temporary buffer)
-    ; mov edi, 0x105000  ; Destination
-    ; mov ecx, (7 * 512) / 4  ; Number of dwords (7 sectors * 512 bytes / 4)
-    ; rep movsd          ; Copy in 32-bit chunks
+    ; ; Copy second part (.data + .bss)
+    ; mov esi, 0x20000
+    ; mov edi, 0x108000
+    ; mov ecx, (50 * 512) / 4  ; ← Match the sector count
+    ; rep movsd
 
-	; mov	eax, 0x2BADB002		; multiboot specs say eax should be this
-	; mov	ebx, boot_info
-	; push boot_info
-    ; call KERNEL_JUMP ; Give control to the kernel
-     mov esi, 0x10000
+    ; mov eax, 0x2BADB002
+    ; mov ebx, boot_info
+    ; push boot_info
+    ; call KERNEL_JUMP
+
+    mov esi, 0x10000
     mov edi, 0x100000
-    mov ecx, (55 * 512) / 4  ; ← Match the sector count
-    rep movsd
-
-    ; Copy second part (.data + .bss)
-    mov esi, 0x20000
-    mov edi, 0x105000
-    mov ecx, (16 * 512) / 4  ; ← Match the sector count
+    mov ecx, (73 * 512) / 4  ; All 73 sectors
     rep movsd
 
     mov eax, 0x2BADB002
