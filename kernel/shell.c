@@ -11,9 +11,9 @@ const char sc_ascii[] = { '?', '?', '1', '2', '3', '4', '5', '6',
 
 
 static command_t commands[] = {
-    {"help",    "show this help",           cmd_help},
-    {"clear",   "Clear screen",             cmd_help},
-    {"echo",    "Echo text",                cmd_help},
+    {"help",    "show all the commands",           cmd_help},
+    {"clear",   "Clear screen",                    cmd_clear},
+    {"echo",    "Echo text",                       cmd_echo},
     {"ls",      "List files",               cmd_help},
     {"cat",     "Display file contents",    cmd_help},
     {"meminfo", "Show memory info",         cmd_help},
@@ -25,16 +25,6 @@ static void cmd_help(const char* args)
 {
     kprint("\nAvailable Commands \n");
 
-    kprint("DEBUG: First command name address: ");
-    char hex[16];
-    int_to_ascii((int)commands[0].name, hex);
-    kprint(hex);
-    kprint("\n");
-    
-    kprint("DEBUG: First command name: ");
-    kprint(commands[0].name);
-    kprint("\n\n");
-
     for (int i = 0; commands[i].name != NULL; i++)
     {
         kprint(" Name ->  ");
@@ -44,6 +34,17 @@ static void cmd_help(const char* args)
         kprint(commands[i].description);
         kprint("\n");
     }
+}
+
+static void cmd_clear(const char* args)
+{
+    clear_screen();
+}
+
+static void cmd_echo(const char *args)
+{
+    kprint("\n");
+    kprint(args);
 }
 
 int shell_init(void)
@@ -69,13 +70,23 @@ int process_cmd(char *buff)
         i++;
         buff++;
     }
+    while(*buff == ' ')
+        buff++;
     cmd[i] = '\0';
     if (memcmp(cmd, "HELP", 4) == 0)
     {
         cmd_help(buff);
     }
+    else if(memcmp(cmd, "CLEAR", 5) == 0)
+    {
+        cmd_clear(buff);
+    }
+    else if(memcmp(cmd, "ECHO", 4) == 0)
+    {
+        cmd_echo(buff);
+    }
     else {
-        kprint("\nTo be implemented cmd -> ");
+        kprint("\nNot implemented cmd -> ");
         kprint(cmd);
         kprint("\n");
     }
