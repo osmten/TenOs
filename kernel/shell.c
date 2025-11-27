@@ -3,19 +3,13 @@
 u8 shell_buff[256] = {0};
 int idx = 0;
 
-const char sc_ascii[] = { '?', '?', '1', '2', '3', '4', '5', '6',     
-    '7', '8', '9', '0', '-', '=', '?', '?', 'Q', 'W', 'E', 'R', 'T', 'Y', 
-        'U', 'I', 'O', 'P', '[', ']', '?', '?', 'A', 'S', 'D', 'F', 'G', 
-        'H', 'J', 'K', 'L', ';', '\'', '`', '?', '\\', 'Z', 'X', 'C', 'V', 
-        'B', 'N', 'M', ',', '.', '/', '?', '?', '?', ' '};
-
-
 static command_t commands[] = {
     {"help",    "show all the commands",           cmd_help},
     {"clear",   "Clear screen",                    cmd_clear},
     {"echo",    "Echo text",                       cmd_echo},
+    {"create",  "Create a new file",               cmd_create_file},
     {"ls",      "List files",               cmd_help},
-    {"cat",     "Display file contents",    cmd_help},
+    {"cat",     "Display file contents",    cmd_cat},
     {"meminfo", "Show memory info",         cmd_help},
     {NULL, NULL, NULL}  // Terminator
 };
@@ -45,6 +39,65 @@ static void cmd_echo(const char *args)
 {
     kprint("\n");
     kprint(args);
+}
+
+static void cmd_create_file(const char *args)
+{
+    kprint("\n");
+    char name[12] = {0};
+    int i = 0;
+    FAT12_File* fp;
+
+    while(*args != ' ')
+    {
+        name[i] = *args;
+        i++;
+        args++;
+    }
+    args++; /*Incrementing the space*/
+
+    char buff[256] = {0};
+    i = 0;
+    while (*args != '\0')
+    {
+        buff[i] = *args;
+        args++;
+        i++;
+    }
+
+    fat12_create(name, 256); /*hardcoded for now*/
+    fp = fat12_open(name);
+    fat12_write(fp, buff, 256);
+
+    kprint("\n File Created\n");
+}
+
+static void cmd_cat(const char *args)
+{
+    FAT12_File* fp;
+    char name[12] = {0};
+    char buff[256] = {0};
+    int i = 0;
+
+    while(*args != ' ')
+    {
+        name[i] = *args;
+        i++;
+        args++;
+    }
+    fp = fat12_open(name);
+    fat12_read(fp, buff, 256);
+
+    kprint("\n");
+    kprint(buff);
+    kprint("\nFile Ended\n");
+}
+
+static void cmd_ls(const char *args)
+{
+    kprint("\n");
+    fat12_list_root();
+    kprint("\n");
 }
 
 int shell_init(void)
@@ -85,6 +138,18 @@ int process_cmd(char *buff)
     {
         cmd_echo(buff);
     }
+    else if(memcmp(cmd, "CREATE", 6) == 0)
+    {
+        cmd_create_file(buff);
+    }
+    else if(memcmp(cmd, "CAT", 3) == 0)
+    {
+        cmd_cat(buff);
+    }
+    else if(memcmp(cmd, "LS", 2) == 0)
+    {
+        cmd_ls(buff);
+    }
     else {
         kprint("\nNot implemented cmd -> ");
         kprint(cmd);
@@ -97,10 +162,10 @@ int shell_process()
 {
     while(1)
     {
-        int scancode = read_key();
-        if (scancode != -1)
+        char c = read_key();
+        if (c != -1)
         {
-            switch (scancode)
+            switch (c)
             {
                 case ENTER_KEY:
                     process_cmd(shell_buff);
@@ -115,7 +180,7 @@ int shell_process()
                     kprint("\b");
                     break;
                 default:
-                    shell_buff[idx] = sc_ascii[scancode];
+                    shell_buff[idx] = c;
                     shell_buff[idx+1] = '\0';
                     kprint(shell_buff + idx);
                     idx++;

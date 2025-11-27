@@ -3,9 +3,10 @@
 
 #include <lib/lib.h>
 #include <drivers/screen.h>
+#include <fs/fs.h>
 
-#define ENTER_KEY  0x1C
-#define BACK_SPACE 0x0E
+#define ENTER_KEY  '\n'
+#define BACK_SPACE '\b'
 #define CMD_BUFFER_SIZE 256
 
 // Command handler type
@@ -22,6 +23,8 @@ static void cmd_help(const char *args);
 static void cmd_clear(const char *args);
 static void cmd_echo(const char *args);
 static void cmd_ls(const char *args);
+static void cmd_cat(const char *args);
+static void cmd_create_file(const char *args);
 static void cmd_cat(const char *args);
 static void cmd_meminfo(const char *args);
 int shell_init();
