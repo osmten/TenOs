@@ -33,15 +33,11 @@ void kprint(char *message) {
     kprint_at(message, -1, -1);
 }
 
-void dummy_print(char a)
+void put_char(char a, char attr)
 {
-    int offset, row, col;
-    offset = get_cursor_offset();
-    row = get_offset_row(offset);
-    col = get_offset_col(offset);
-
-
-    print_char(a, col, row, WHITE_ON_BLACK);
+    if(!attr)
+        attr = WHITE_ON_BLACK;
+    print_char(a, -1, -1, attr);
 }
 
 /**********************************************************
@@ -69,8 +65,16 @@ int print_char(char c, int col, int row, char attr) {
     }
 
     int offset;
-    if (col >= 0 && row >= 0) offset = get_offset(col, row);
-    else offset = get_cursor_offset();
+    // if (col >= 0 && row >= 0) offset = get_offset(col, row);
+    // else offset = get_cursor_offset();
+
+    if (col >= 0 && row >= 0)
+        offset = get_offset(col, row);
+    else {
+        offset = get_cursor_offset();
+        row = get_offset_row(offset);
+        col = get_offset_col(offset);
+    }
 
     if (c == '\n') {
         row = get_offset_row(offset);

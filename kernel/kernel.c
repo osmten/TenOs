@@ -105,13 +105,21 @@ void main(struct multiboot_info* bootinfo){
     kprint('\n');
 
 	fat12_init();
+	printk_init();
 	shell_init();
-	
+
 	int a = 10;
 	char b = 'f';
 	char *str = "This is log\0";
 	printk("Value of int is %d, char is %c, and string is %s\n", a, b, str);
 
+	pr_debug("","This is DEBUG print");
+	pr_info("","This is INFO print");
+	pr_err("","This is ERROR print");
+	pr_warn("","This is WARN print");
+	set_log_level(KERN_DEBUG);
+	pr_debug("","This is DEBUG print");
+	
 	while(1)
 	{
 		kprint("\nTenOS> ");
