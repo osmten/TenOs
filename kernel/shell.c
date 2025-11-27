@@ -126,27 +126,27 @@ int process_cmd(char *buff)
     while(*buff == ' ')
         buff++;
     cmd[i] = '\0';
-    if (memcmp(cmd, "HELP", 4) == 0)
+    if (memcmp(cmd, "help", 4) == 0)
     {
         cmd_help(buff);
     }
-    else if(memcmp(cmd, "CLEAR", 5) == 0)
+    else if(memcmp(cmd, "clear", 5) == 0)
     {
         cmd_clear(buff);
     }
-    else if(memcmp(cmd, "ECHO", 4) == 0)
+    else if(memcmp(cmd, "echo", 4) == 0)
     {
         cmd_echo(buff);
     }
-    else if(memcmp(cmd, "CREATE", 6) == 0)
+    else if(memcmp(cmd, "create", 6) == 0)
     {
         cmd_create_file(buff);
     }
-    else if(memcmp(cmd, "CAT", 3) == 0)
+    else if(memcmp(cmd, "cat", 3) == 0)
     {
         cmd_cat(buff);
     }
-    else if(memcmp(cmd, "LS", 2) == 0)
+    else if(memcmp(cmd, "ls", 2) == 0)
     {
         cmd_ls(buff);
     }

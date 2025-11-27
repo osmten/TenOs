@@ -33,6 +33,16 @@ void kprint(char *message) {
     kprint_at(message, -1, -1);
 }
 
+void dummy_print(char a)
+{
+    int offset, row, col;
+    offset = get_cursor_offset();
+    row = get_offset_row(offset);
+    col = get_offset_col(offset);
+
+
+    print_char(a, col, row, WHITE_ON_BLACK);
+}
 
 /**********************************************************
  * Private kernel functions                               *

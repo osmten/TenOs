@@ -107,6 +107,11 @@ void main(struct multiboot_info* bootinfo){
 	fat12_init();
 	shell_init();
 	
+	int a = 10;
+	char b = 'f';
+	char *str = "This is log\0";
+	printk("Value of int is %d, char is %c, and string is %s\n", a, b, str);
+
 	while(1)
 	{
 		kprint("\nTenOS> ");
