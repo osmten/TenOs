@@ -86,10 +86,6 @@ static void to_dos_filename(const char *input, char *output) {
 FAT12_File* fat12_open(const char *filename) {
     char dos_name[11];
     to_dos_filename(filename, dos_name);
-
-    kprint("FAT12 OPEN filename: ");
-    kprint(dos_name);
-    kprint("\n");
     
     // Search root directory
     for (u32 sector = 0; sector < mount_info.root_size; sector++) {
@@ -269,7 +265,7 @@ int fat12_create(const char *filename, u32 size) {
         // free(existing);
         return -1;  // File exists
     }
-    kprint("Created FileName : ");
+    kprint("\nCreated FileName : ");
     kprint(dos_name);
     kprint("\n");
 
@@ -317,7 +313,6 @@ int fat12_create(const char *filename, u32 size) {
     // Write directory entry
     write_sector(mount_info.root_start + dir_sector, sector_buffer);
     
-    kprint("FAT12 Create\n");
     return 0;  // Success
 }
 
@@ -354,8 +349,8 @@ int fat12_write(FAT12_File *file, const u8 *buffer, u32 size) {
 
 // List root directory
 int fat12_list_root(void) {
-    // printf("Root directory contents:\n");
-    // printf("%-11s %10s\n", "Name", "Size");
+    kprint("Root directory contents:\n");
+    kprint("Name                   Size\n");
     // printf("------------------------\n");
     
     int count = 0;
@@ -397,6 +392,10 @@ int fat12_list_root(void) {
             name[j] = '\0';
             
             // printf("%-11s %10d\n", name, entries[i].file_size);
+            kprint(name);
+            kprint("                    ");
+            kprint(entries[i].file_size);
+            kprint("\n");
             count++;
         }
     }
