@@ -1,0 +1,32 @@
+# Compiled object files
+*.o
+*.obj
+
+# Binary files
+*.bin
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Disk images and other binary formats
+*.img
+*.iso
+*.dmg
+*.map
+
+# Build directories
+build/
+dist/
+out/
+target/
+bin/
+obj/
+*.app
+
+# IDE files (optional)
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
