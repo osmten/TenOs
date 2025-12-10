@@ -15,10 +15,9 @@ void shell_main() {
     print("========================================\n\n");
     
     while(1) {
-        print("TenOS> ");
+        print_color("TenOS> ", VGA_COLOR_GREEN);
         
         int len = read(0, line, sizeof(line) - 1);
-        print("after read \n");
         
         if (len > 0) {
             line[len] = '\0';

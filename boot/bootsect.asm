@@ -1,6 +1,4 @@
-; Identical to lesson 13's boot sector, but the %included files have new paths
 [org 0x7c00]
-
 
 ; ===== Jump over BPB =====
 jmp short entry
@@ -47,7 +45,7 @@ STAGE_2_OFFSET equ 0x500
     call load_stage2 ;read stage2 bootloader from the disk
 
     call STAGE_2_OFFSET
-    jmp $ ; Never executed
+    jmp $
 
 %include "boot/print.asm"
 %include "boot/print_hex.asm"
@@ -60,8 +58,8 @@ load_stage2:
     call print_nl
 
     mov bx, STAGE_2_OFFSET ; Read from disk and store in 0x500
-    mov dh, 2 ; Our future kernel will be larger, make this big
-     mov al, 0x02
+    mov dh, 2
+    mov al, 0x02
     mov dl, [BOOT_DRIVE]
     call disk_load
     ret

@@ -1,23 +1,8 @@
 #ifndef _MMNGR_VIRT_PTE_H
 #define _MMNGR_VIRT_PTE_H
-//****************************************************************************
-//**
-//**    vmmngr_pte.h
-//**		-Page Table Entries (PTE). This provides an abstract interface
-//**	to aid in management of PTEs.
-//**
-//****************************************************************************
-//============================================================================
-//    INTERFACE REQUIRED HEADERS
-//============================================================================
 
 #include "memory.h"	//physical_addr
 
-//============================================================================
-//    INTERFACE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
-//============================================================================
-
-//! i86 architecture defines this format so be careful if you modify it
 enum PAGE_PTE_FLAGS {
 
 	I86_PTE_PRESENT			=	1,			//0000000000000000000000000000001
@@ -36,47 +21,22 @@ enum PAGE_PTE_FLAGS {
 //! page table entry
 typedef u32 pt_entry;
 
-//============================================================================
-//    INTERFACE CLASS PROTOTYPES / EXTERNAL CLASS REFERENCES
-//============================================================================
-//============================================================================
-//    INTERFACE STRUCTURES / UTILITY CLASSES
-//============================================================================
-//============================================================================
-//    INTERFACE DATA DECLARATIONS
-//============================================================================
-//============================================================================
-//    INTERFACE FUNCTION PROTOTYPES
-//============================================================================
-
 //! sets a flag in the page table entry
-extern void pt_entry_add_attrib (pt_entry* e, u32 attrib);
+void pt_entry_add_attrib (pt_entry* e, u32 attrib);
 
 //! clears a flag in the page table entry
-extern void pt_entry_del_attrib (pt_entry* e, u32 attrib);
+void pt_entry_del_attrib (pt_entry* e, u32 attrib);
 
 //! sets a frame to page table entry
-extern void pt_entry_set_frame (pt_entry*, u32);
+void pt_entry_set_frame (pt_entry*, u32);
 
 //! test if page is present
-extern u32 pt_entry_is_present (pt_entry e);
+u32 pt_entry_is_present (pt_entry e);
 
 //! test if page is writable
-extern u32 pt_entry_is_writable (pt_entry e);
+u32 pt_entry_is_writable (pt_entry e);
 
 //! get page table entry frame address
-extern u32 pt_entry_pfn (pt_entry e);
-
-//============================================================================
-//    INTERFACE OBJECT CLASS DEFINITIONS
-//============================================================================
-//============================================================================
-//    INTERFACE TRAILING HEADERS
-//============================================================================
-//****************************************************************************
-//**
-//**    END [vmmngr_pte.h]
-//**
-//****************************************************************************
+u32 pt_entry_pfn (pt_entry e);
 
 #endif

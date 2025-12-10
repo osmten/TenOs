@@ -1,23 +1,8 @@
 #ifndef _MMNGR_VIRT_PDE_H
 #define _MMNGR_VIRT_PDE_H
-//****************************************************************************
-//**
-//**    vmmngr_pde.h
-//**		-Page Directory Entries (PDE). This provides an abstract interface
-//**	to aid in management of PDEs.
-//**
-//****************************************************************************
-//============================================================================
-//    INTERFACE REQUIRED HEADERS
-//============================================================================
 
 #include "memory.h"	//physical_addr
 
-//============================================================================
-//    INTERFACE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
-//============================================================================
-
-//! this format is defined by the i86 architecture--be careful if you modify it
 enum PAGE_PDE_FLAGS {
 
 	I86_PDE_PRESENT			=	1,			//0000000000000000000000000000001
@@ -36,56 +21,31 @@ enum PAGE_PDE_FLAGS {
 //! a page directery entry
 typedef u32 pd_entry;
 
-//============================================================================
-//    INTERFACE CLASS PROTOTYPES / EXTERNAL CLASS REFERENCES
-//============================================================================
-//============================================================================
-//    INTERFACE STRUCTURES / UTILITY CLASSES
-//============================================================================
-//============================================================================
-//    INTERFACE DATA DECLARATIONS
-//============================================================================
-//============================================================================
-//    INTERFACE FUNCTION PROTOTYPES
-//============================================================================
-
 //! sets a flag in the page table entry
 void pd_entry_add_attrib (pd_entry* e, u32 attrib);
 
 //! clears a flag in the page table entry
-extern void pd_entry_del_attrib (pd_entry* e, u32 attrib);
+void pd_entry_del_attrib (pd_entry* e, u32 attrib);
 
 //! sets a frame to page table entry
-extern void pd_entry_set_frame (pd_entry*, u32);
+void pd_entry_set_frame (pd_entry*, u32);
 
 //! test if page is present
-extern u32 pd_entry_is_present (pd_entry e);
+u32 pd_entry_is_present (pd_entry e);
 
 //! test if directory is user mode
-extern u32 pd_entry_is_user (pd_entry);
+u32 pd_entry_is_user (pd_entry);
 
 //! test if directory contains 4mb pages
-extern u32 pd_entry_is_4mb (pd_entry);
+u32 pd_entry_is_4mb (pd_entry);
 
 //! test if page is writable
-extern u32 pd_entry_is_writable (pd_entry e);
+u32 pd_entry_is_writable (pd_entry e);
 
 //! get page table entry frame address
 u32 pd_entry_pfn (pd_entry e);
 
 //! enable global pages
-extern void pd_entry_enable_global (pd_entry e);
-
-//============================================================================
-//    INTERFACE OBJECT CLASS DEFINITIONS
-//============================================================================
-//============================================================================
-//    INTERFACE TRAILING HEADERS
-//============================================================================
-//****************************************************************************
-//**
-//**    END [vmmngr_pde.h]
-//**
-//****************************************************************************
+void pd_entry_enable_global (pd_entry e);
 
 #endif

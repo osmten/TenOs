@@ -47,10 +47,10 @@ int fat12_init(void) {
                    mount_info.fat_buffer + (i * 512));
     }
     
-    kprint("FAT12 initialized:\n");
-    // printf("  FAT start: %d\n", mount_info.fat_start);
-    // printf("  Root start: %d\n", mount_info.root_start);
-    // printf("  Data start: %d\n", mount_info.data_start);
+    printk("FAT12 initialized:\n");
+    pr_info("FS", "  FAT start: %d\n", mount_info.fat_start);
+    pr_info("FS", "  Root start: %d\n", mount_info.root_start);
+    pr_info("FS", "  Data start: %d\n", mount_info.data_start);
 
     /*FAT-12 Test will move somwhere else*/
     /*
@@ -124,12 +124,10 @@ FAT12_File* fat12_open(const char *filename) {
             // Compare filenames
             if (memcmp(entries[i].filename, dos_name, 11) == 0) {
                 // Found it!
-                kprint("FILE FOUND\n");
-                FAT12_File *file = (FAT12_File*)pmmngr_alloc_block();//malloc(sizeof(FAT12_File));
+                pr_debug("FS", "FILE FOUND\n");
+                FAT12_File *file = (FAT12_File*)pmmngr_alloc_block();
                 if (!file) return 0;
-                
-                kprint("FILE POINTER FOUNd\n");
-                // strncpy(file->name, filename, 256);
+    
                 memory_copy(file->name, filename, 256);
                 file->first_cluster = entries[i].first_cluster;
                 file->current_cluster = entries[i].first_cluster;
@@ -149,9 +147,8 @@ FAT12_File* fat12_open(const char *filename) {
 // Get next cluster from FAT12
 static u16 get_next_cluster(u16 cluster) {
     // FAT12: each entry is 12 bits (1.5 bytes)
-    u32 fat_offset = cluster + (cluster / 2);  // cluster * 1.5
+    u32 fat_offset = cluster + (cluster / 2);
     
-    // Read 16-bit value
     u16 next_cluster = *(u16*)(mount_info.fat_buffer + fat_offset);
     
     // Extract 12 bits
@@ -197,8 +194,6 @@ int fat12_read(FAT12_File *file, u8 *buffer, u32 size) {
     
     u32 bytes_read = 0;
     u32 bytes_remaining = file->file_size - file->position;
-
-    kprint("FAT12 READ\n");
     
     if (size > bytes_remaining) {
         size = bytes_remaining;
@@ -215,14 +210,6 @@ int fat12_read(FAT12_File *file, u8 *buffer, u32 size) {
         // Copy data
         u32 bytes_to_copy = (size > 512) ? 512 : size;
         memory_copy(buffer, sector_buffer, bytes_to_copy);
-
-
-        // for (int i = 0; i < 16; i++)
-    	// {
-		//     kprint(sector_buffer[i]);
-	    // }
-
-        kprint("\n");
         
         buffer += bytes_to_copy;
         size -= bytes_to_copy;
@@ -361,11 +348,9 @@ int fat12_write(FAT12_File *file, const u8 *buffer, u32 size) {
     return bytes_written;
 }
 
-// List root directory
 int fat12_list_root(void) {
-    kprint("Root directory contents:\n");
-    kprint("Name                   Size\n");
-    // printf("------------------------\n");
+    printk("Root directory contents:\n");
+    printk("Name                   Size\n");
     
     int count = 0;
     
@@ -384,7 +369,6 @@ int fat12_list_root(void) {
                 continue;
             }
             
-            // Skip volume label and directory entries for now
             if (entries[i].attributes & (ATTR_VOLUME_ID | ATTR_DIRECTORY)) {
                 continue;
             }
@@ -405,17 +389,16 @@ int fat12_list_root(void) {
             }
             name[j] = '\0';
             
-            // printf("%-11s %10d\n", name, entries[i].file_size);
-            kprint(name);
-            kprint("                    ");
-            kprint(entries[i].file_size);
-            kprint("\n");
+            printk("%s", name);
+            printk("                    ");
+            printk("%d", entries[i].file_size);
+            printk("\n");
             count++;
         }
     }
     
 end_list:
-    // printf("\nTotal files: %d\n", count);
+    printk("\nTotal files: %d\n", count);
     return count;
 }
 

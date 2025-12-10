@@ -56,6 +56,11 @@ int read(int fd, char *buf, unsigned int count) {
     return syscall3(SYS_READ, fd, (unsigned int)buf, count);
 }
 
+int print_color(const char *str, int color)
+{
+    return syscall2(SYS_COLOR_PRINT, (unsigned int)str, color);
+}
+
 int sys_exec_command(const char *cmd) {
     return syscall1(SYS_EXEC_CMD, (unsigned int)cmd);
 }

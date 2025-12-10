@@ -11,6 +11,7 @@
 #define SYS_PRINT   1
 #define SYS_READ    2
 #define SYS_EXEC_CMD 3
+#define SYS_COLOR_PRINT 4
 
 #define ENTER_KEY  '\n'
 #define BACK_SPACE '\b'
@@ -41,7 +42,7 @@ u32 syscall_dispatcher(u32 syscall_num, u32 arg1, u32 arg2, u32 arg3, u32 arg4, 
 
 // Individual syscall implementations
 u32 sys_exit(u32 code);
-u32 sys_print(const char *str);
+u32 sys_print(const char *str, int color);
 u32 sys_read(u32 fd, char *buf, u32 count);
 
 #endif

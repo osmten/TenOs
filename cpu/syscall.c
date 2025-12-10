@@ -36,6 +36,7 @@ static void cmd_echo(const char *args)
 {
     kprint("\n");
     kprint(args);
+    kprint("\n");
 }
 
 static void cmd_create_file(const char *args)
@@ -158,39 +159,34 @@ u32 syscall_dispatcher(u32 syscall_num, u32 arg1, u32 arg2, u32 arg3, u32 arg4, 
             return sys_exit(arg1);
         
         case SYS_PRINT:
-            return sys_print((const char*)arg1);
+            return sys_print((const char*)arg1, 0);
         
         case SYS_READ:
             return sys_read(arg1, (char*)arg2, arg3);
 
         case SYS_EXEC_CMD:
-            printk("Going in process cmd\n");
             return process_cmd((const char*)arg1);
+
+        case SYS_COLOR_PRINT:
+            return sys_print((const char*)arg1, arg2);
         
         default:
             printk("[KERNEL] Unknown syscall: %d\n", syscall_num);
-            return -1;  // Error
+            return -1; 
     }
 }
 
 // Syscall 0: Exit
 u32 sys_exit(u32 code) {
     printk("\n[KERNEL] Process exited with code: %d\n", code);
-    
-    // In a real OS, we would:
-    // - Free process memory
-    // - Remove from process list
-    // - Schedule next process
-    
-    // For now, just halt
     printk("[KERNEL] System halted.\n");
+
     while(1) asm("hlt");
     
     return 0;
 }
 
-// Syscall 1: Print string
-u32 sys_print(const char *str) {
+u32 sys_print(const char *str, int color) {
     // CRITICAL: Validate pointer!
     // User could pass a kernel address to read kernel memory!
     
@@ -200,6 +196,11 @@ u32 sys_print(const char *str) {
     //     return -1;  // Error: EFAULT (bad address)
     // }
     
+    if(color == 0)
+    {
+        color = WHITE_ON_BLACK;
+    }
+
     // Check if string is too long
     int len = 0;
     const char *p = str;
@@ -213,11 +214,10 @@ u32 sys_print(const char *str) {
         return -1;
     }
     
-    printk("%s", str);
+    printk_color(color, "%s", str);
     return len;
 }
 
-// Syscall 2: Read (placeholder)
 u32 sys_read(u32 fd, char *buf, u32 count) {
     pr_debug("KERNEL", "sys_read handler called\n");
 
