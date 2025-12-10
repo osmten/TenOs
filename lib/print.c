@@ -14,6 +14,30 @@ void printk_init()
 {
     current_level = KERN_INFO;
     pr_info("PRINTK", "Kernel print initialized..");
+
+    /*Print Tests*/
+    /*
+    int a = 10;
+	char b = 'f';
+	char *str = "This is log\0";
+	printk("Value of int is %d, char is %c, and string is %s and this is hex %x\n"
+			, a, b, str, a);
+
+	pr_debug("","This is DEBUG print");
+	pr_info("","This is INFO print");
+	pr_err("","This is ERROR print");
+	pr_warn("","This is WARN print");
+	set_log_level(KERN_DEBUG);
+	pr_debug("","This is DEBUG print");
+
+	printk("Zero: %d\n", 0);           // Should print "0"
+	printk("Negative: %d\n", -42);     // Should print "-42"
+	printk("Hex zero: %x\n", 0);       // Should print "0x0"
+	printk("Hex: %x\n", 0xDEADBEEF);   // Should print "0xDEADBEEF"
+	printk("Mixed: %d, %x, %s\n", 10, 0xFF, "test");
+
+	pr_debug("MAIN", "This is integer %d", 512);
+    */
 }
 
 void set_log_level(int level)

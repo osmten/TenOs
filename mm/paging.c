@@ -1,19 +1,4 @@
-
-//****************************************************************************
-//**
-//**    mmngr_virtual.cpp
-//**		-Virtual Memory Manager
-//**
-//****************************************************************************
-
-//============================================================================
-//    IMPLEMENTATION HEADERS
-//============================================================================
-
 #include "paging.h"
-//============================================================================
-//    IMPLEMENTATION PRIVATE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
-//============================================================================
 
 //! page table represents 4mb address space
 #define PTABLE_ADDR_SPACE_SIZE 0x400000
@@ -24,37 +9,11 @@
 //! page sizes are 4k
 #define PAGE_SIZE 4096
 
-//============================================================================
-//    IMPLEMENTATION PRIVATE CLASS PROTOTYPES / EXTERNAL CLASS REFERENCES
-//============================================================================
-//============================================================================
-//    IMPLEMENTATION PRIVATE STRUCTURES / UTILITY CLASSES
-//============================================================================
-//============================================================================
-//    IMPLEMENTATION REQUIRED EXTERNAL REFERENCES (AVOID)
-//============================================================================
-//============================================================================
-//    IMPLEMENTATION PRIVATE DATA
-//============================================================================
-
 //! current directory table
 struct pdirectory* _cur_directory=0;
 
 //! current page directory base register
 u32	_cur_pdbr=0;
-
-//============================================================================
-//    INTERFACE DATA
-//============================================================================
-//============================================================================
-//    IMPLEMENTATION PRIVATE FUNCTION PROTOTYPES
-//============================================================================
-//============================================================================
-//    IMPLEMENTATION PRIVATE FUNCTIONS
-//============================================================================
-//============================================================================
-//    INTERFACE FUNCTIONS
-//============================================================================
 
 inline pt_entry* vmmngr_ptable_lookup_entry (struct ptable* p,virtual_addr addr) {
 
@@ -66,7 +25,7 @@ inline pt_entry* vmmngr_ptable_lookup_entry (struct ptable* p,virtual_addr addr)
 inline pd_entry* vmmngr_pdirectory_lookup_entry (struct pdirectory* p, virtual_addr addr) {
 
 	if (p)
-		return &p->m_entries[ PAGE_TABLE_INDEX (addr) ];
+		return &p->m_entries[ PAGE_DIRECTORY_INDEX (addr) ];
 	return 0;
 }
 
@@ -109,7 +68,7 @@ u32* vmmngr_alloc_page () {
 	// pt_entry_add_attrib (e, I86_PTE_PRESENT);
 	//doesent set WRITE flag...
 
-   // vmmngr_map_page(p, virt);
+   vmmngr_map_page(p, virt);
 
 	return virt;
 }
@@ -129,7 +88,7 @@ void vmmngr_map_page(void* phys, void* virt) {
 
    if(!phys || !virt)
       return;
-   return;
+
    // ! get page directory
    struct pdirectory* pageDirectory = vmmngr_get_directory ();
 
@@ -168,7 +127,7 @@ void vmmngr_map_page(void* phys, void* virt) {
 
 void vmmngr_initialize () {
    //! allocate default page table
-   return;
+
    struct ptable* table[5];
    u32 frame = 0, virt = 0, page_directory_addr = 0;
    
@@ -187,7 +146,9 @@ void vmmngr_initialize () {
 
          //! create a new page
          pt_entry page=0;
-         pt_entry_add_attrib (&page, I86_PTE_PRESENT);
+         pt_entry_add_attrib (&page, I86_PTE_PRESENT );
+         pt_entry_add_attrib (&page, I86_PTE_USER);
+         pd_entry_add_attrib (&page, I86_PDE_WRITABLE);
          pt_entry_set_frame (&page, frame);
 
          //! ...and add it to the page table
@@ -198,7 +159,7 @@ void vmmngr_initialize () {
    }
 
    //! create default directory table
-   struct pdirectory* dir = (struct pdirectory*)pmmngr_alloc_blocks(3);
+   struct pdirectory* dir = (struct pdirectory*)pmmngr_alloc_block();
    if (!dir)
       return;
 
@@ -210,6 +171,7 @@ void vmmngr_initialize () {
       //! get first entry in dir table and set it up to point to our table
       pd_entry* entry = &dir->m_entries[PAGE_DIRECTORY_INDEX(page_directory_addr)];
       pd_entry_add_attrib (entry, I86_PDE_PRESENT);
+      pt_entry_add_attrib (entry, I86_PTE_USER);
       pd_entry_add_attrib (entry, I86_PDE_WRITABLE);
       pd_entry_set_frame (entry, (u32)table[i]);
       page_directory_addr += 4194304; //incrementing 4MB
@@ -224,12 +186,3 @@ void vmmngr_initialize () {
    pmmngr_paging_enable(1);
 
 }
-
-//============================================================================
-//    INTERFACE CLASS BODIES
-//============================================================================
-//****************************************************************************
-//**
-//**    END[mmngr_virtual.cpp]
-//**
-//****************************************************************************

@@ -51,7 +51,21 @@ int fat12_init(void) {
     // printf("  FAT start: %d\n", mount_info.fat_start);
     // printf("  Root start: %d\n", mount_info.root_start);
     // printf("  Data start: %d\n", mount_info.data_start);
-    
+
+    /*FAT-12 Test will move somwhere else*/
+    /*
+        fat12_create("OSAMAOS.txt", 100);
+        char *name = "My name is Osama\0";
+
+        fat12_write(fat12_open("OSAMAOS.txt"), name, 100);
+
+        char arr[512] = {0};
+
+        fat12_read(fat12_open("OSAMAOS.txt"), arr, 100);
+
+        kprint(arr);
+    */
+
     return 0;
 }
 

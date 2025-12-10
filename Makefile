@@ -67,6 +67,7 @@ DRIVERS_DIR = drivers
 FS_DIR      = fs
 MM_DIR      = mm
 LIB_DIR     = lib
+USR_DIR		= user
 
 # Source files
 C_SOURCES = $(wildcard $(KERNEL_DIR)/*.c) \
@@ -74,16 +75,21 @@ C_SOURCES = $(wildcard $(KERNEL_DIR)/*.c) \
             $(wildcard $(CPU_DIR)/*.c) \
             $(wildcard $(LIB_DIR)/*.c) \
             $(wildcard $(MM_DIR)/*.c) \
-            $(wildcard $(FS_DIR)/*.c)
+            $(wildcard $(FS_DIR)/*.c) \
+			$(wildcard $(USR_DIR)/*.c)
 
 HEADERS   = $(wildcard $(KERNEL_DIR)/*.h) \
             $(wildcard $(DRIVERS_DIR)/*.h) \
             $(wildcard $(CPU_DIR)/*.h) \
             $(wildcard $(LIB_DIR)/*.h) \
             $(wildcard $(MM_DIR)/*.h) \
-            $(wildcard $(FS_DIR)/*.h)
+            $(wildcard $(FS_DIR)/*.h) \
+			$(wildcard $(USR_DIR)/*.h)
 
-ASM_SOURCES = $(CPU_DIR)/interrupt.asm
+ASM_SOURCES = $(CPU_DIR)/interrupt.asm \
+				$(CPU_DIR)/kernel_gdt.asm \
+				$(CPU_DIR)/syscall_handler.asm
+# 				$(KERNEL_DIR)/usermode.asm
 
 OBJ = ${C_SOURCES:.c=.o}
 ASM_OBJ = ${ASM_SOURCES:.asm=.o}
@@ -104,7 +110,6 @@ hda.img: boot/bootsect.bin boot/stage2.bin kernel.bin
 	dd if=kernel.bin of=hda.img seek=3 conv=notrunc
 	# Write test file (LBA 200)
 	dd if=/dev/zero of=hda.img seek=200 bs=512 count=1 conv=notrunc
-	dd if=test.txt of=hda.img seek=200 bs=512 conv=notrunc
 	dd if=hda.img skip=200 bs=512 count=1 | hexdump -C
 
 kernel.bin: boot/kernel_entry.o ${OBJ} ${ASM_OBJ}

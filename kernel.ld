@@ -28,6 +28,9 @@ SECTIONS {
         __bss_end = .;
     } > data
 
+    . = ALIGN(4096);
+    kernel_end = .; 
+
     .stack 0x180000 (NOLOAD) : ALIGN(16) { 
         _stack_bottom = .;
         . = . + 0xFFFC;
@@ -38,4 +41,5 @@ SECTIONS {
     PROVIDE(_stack_bottom = _stack_bottom);
     PROVIDE(__bss_start = __bss_start);
     PROVIDE(__bss_end = __bss_end);
+    PROVIDE(__kernel_end = __kernel_end);
 }

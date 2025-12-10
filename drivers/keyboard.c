@@ -1,7 +1,14 @@
 #include "keyboard.h"
 
-int rptr = 0, wptr = 0;
-char screen_buff[256] = {0};
+#define BUFFER_SIZE 256
+static char input_buffer[BUFFER_SIZE];
+static int read_pos = 0;
+static int write_pos = 0;
+
+// Current line being edited (before Enter is pressed)
+static char line_buffer[BUFFER_SIZE];
+static int line_pos = 0;
+
 
 const char sc_ascii[] = {
     '?',  '?',  '1',  '2',  '3',  '4',  '5',  '6',     // 0x00-0x07
@@ -57,6 +64,21 @@ char scancode_to_ascii(u8 scancode, int shift, int caps_lock) {
     return c;
 }
 
+// Commit current line to the input buffer
+static void commit_line() {
+    // Copy line_buffer to input_buffer
+    for (int i = 0; i < line_pos; i++) {
+        input_buffer[write_pos] = line_buffer[i];
+        write_pos = (write_pos + 1) % BUFFER_SIZE;
+    }
+    
+    // Add newline
+    input_buffer[write_pos] = '\n';
+    write_pos = (write_pos + 1) % BUFFER_SIZE;
+    
+    // Reset line buffer
+    line_pos = 0;
+}
 
 void keyboard_callback(registers_t *regs) {
     /* The PIC leaves us the scancode in port 0x60 */
@@ -82,26 +104,78 @@ void keyboard_callback(registers_t *regs) {
         // TODO: Update keyboard LED
     }
     
-    if (pressed)
-    {
-        char c = scancode_to_ascii(scancode, shift_pressed, caps_lock);
-        screen_buff[wptr] = c;
-        wptr++;
+    if (!pressed) return;  // Only handle key press, not release
+    
+    char c = scancode_to_ascii(scancode, shift_pressed, caps_lock);
+    
+    // Handle special keys
+    if (c == '\n') {
+        // Enter pressed - commit the line
+        kprint("\n");
+        commit_line();
+    } 
+    else if (c == '\b') {
+        // Backspace
+        if (line_pos > 0) {
+            line_pos--;
+            kprint("\b");  // Move cursor back and clear character
+        }
     }
-
+    else if (c != '?') {
+        // Regular character
+        if (line_pos < BUFFER_SIZE - 1) {
+            line_buffer[line_pos++] = c;
+            
+            // Echo character to screen
+            char str[2] = {c, '\0'};
+            kprint(str);
+        }
+    }
     return;
 }
 
-int read_key()
-{    
-    int scancode = screen_buff[rptr];
-    if(rptr == wptr)
-    {
-        return -1;
+// Check if there's a complete line available (ends with \n)
+int has_complete_line() {
+    int pos = read_pos;
+    
+    while (pos != write_pos) {
+        if (input_buffer[pos] == '\n') {
+            return 1;  // Found a newline
+        }
+        pos = (pos + 1) % BUFFER_SIZE;
     }
-    rptr++;
-    return scancode;
+    
+    return 0;  // No newline found
 }
+
+// Read from keyboard buffer (called by syscall)
+// This is BLOCKING - waits until a complete line is available
+int keyboard_read(char *user_buf, unsigned int count) {
+    int bytes_read = 0;
+    
+    // Wait for a complete line (with newline)
+    while (!has_complete_line()) {
+        // Enable interrupts and halt until next interrupt
+        asm volatile("sti");
+        asm volatile("hlt");
+    }
+    
+    // Now we have at least one complete line
+    // Copy characters until newline or buffer full
+    while (bytes_read < count && read_pos != write_pos) {
+        user_buf[bytes_read] = input_buffer[read_pos];
+        read_pos = (read_pos + 1) % BUFFER_SIZE;
+        bytes_read++;
+        
+        // Stop at newline
+        if (user_buf[bytes_read - 1] == '\n') {
+            break;
+        }
+    }
+    
+    return bytes_read;
+}
+
 
 void init_keyboard(int a) {
    register_interrupt_handler(IRQ1, keyboard_callback); 

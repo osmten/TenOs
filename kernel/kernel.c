@@ -1,47 +1,64 @@
 #include "kernel.h"
 
-struct multiboot_info {
-	u32	m_flags;
-	u32	m_memoryLo;
-	u32	m_memoryHi;
-	u32	m_bootDevice;
-	u32	m_cmdLine;
-	u32	m_modsCount;
-	u32	m_modsAddr;
-	u32	m_syms0;
-	u32	m_syms1;
-	u32	m_syms2;
-	u32	m_mmap_length;
-	u32	m_mmap_addr;
-	u32	m_drives_length;
-	u32	m_drives_addr;
-	u32	m_config_table;
-	u32	m_bootloader_name;
-	u32	m_apm_table;
-	u32	m_vbe_control_info;
-	u32	m_vbe_mode_info;
-	u32	m_vbe_mode;
-	u32	m_vbe_interface_addr;
-	u16	m_vbe_interface_len;
-};
+extern u32 kernel_end;
+extern u32 _stack_top;
 
-struct memory_region {
-	u32	startLo;
-	u32	startHi;
-	u32	sizeLo;
-	u32	sizeHi;
-	u32	type;
-	u32	acpi_3_0;
-};
+
+void test_gdt_and_tss() {
+    printk("\n=== GDT and TSS Test ===\n");
+    
+    // Test 1: Check current segments
+    u16 cs, ds, ss;
+    asm volatile("mov %%cs, %0" : "=r"(cs));
+    asm volatile("mov %%ds, %0" : "=r"(ds));
+    asm volatile("mov %%ss, %0" : "=r"(ss));
+    
+    printk("CS: 0x%x (should be 0x08)\n", cs);
+    printk("DS: 0x%x (should be 0x10)\n", ds);
+    printk("SS: 0x%x (should be 0x10)\n", ss);
+    
+    // Test 2: Check TSS
+    u16 tr;
+    asm volatile("str %0" : "=r"(tr));
+    printk("TR: 0x%x (should be 0x28)\n", tr);
+    
+    // Test 3: Check GDT address
+    struct {
+        u16 limit;
+        u32 base;
+    } __attribute__((packed)) gdtr;
+    
+    asm volatile("sgdt %0" : "=m"(gdtr));
+    printk("GDTR base: 0x%x\n", gdtr.base);
+    printk("GDTR limit: 0x%x\n", gdtr.limit);
+    printk("Kernel GDT start: 0x%x\n", (u32)kernel_gdt_start);
+    
+    if (gdtr.base == (u32)kernel_gdt_start) {
+        printk("✓ Kernel GDT is loaded!\n");
+    } else {
+        printk("✗ Boot GDT still active!\n");
+    }
+    
+    // Test 4: Verify we're in ring 0
+    printk("CPL: %d (should be 0)\n", cs & 0x3);
+    
+    printk("=== Test Complete ===\n\n");
+}
+
 
 void main(struct multiboot_info* bootinfo){
 
-	kprint("kernel loaded\n");
+	kernel_gdt_load();
+	printk_color(VGA_COLOR_CYAN,"============kernel loaded================\n");
+
+	u32 bitmap_addr = ((u32)&kernel_end + 0xFFF) & ~0xFFF; 
+
     asm volatile("cli");
     isr_install();
-
     init_timer(50);
     init_keyboard();
+	fat12_init();
+	printk_init();
 
     asm volatile("sti");
 
@@ -51,100 +68,38 @@ void main(struct multiboot_info* bootinfo){
 	//! get memory size in KB
 	u32 memSize = 1024 + bootinfo->m_memoryLo + bootinfo->m_memoryHi*64;
 
-	kprint("\nTotal Size ");
-	char sz[5]={0};
-	int_to_ascii(memSize, sz);
-	kprint(sz);
-	kprint(" ");
+	pr_debug("KERNEL", "Kernel ends at: %x\n", (u32)&kernel_end);
+    pr_debug("KERNEL", "Bitmap starts at: %x\n", bitmap_addr);
 
-	init_mem_mngr(400000, memSize);
+	pr_info("Memory","Total Size %d", memSize);
+	printk_color(VGA_COLOR_MAGENTA,"===========MEMORY MAP========== \n");
 
-	char sc_ascii[5]={0};
+	init_mem_mngr(bitmap_addr, memSize);
 
-	for (int i=0; i<size; ++i) {
-
+	for (int i=0; i<size; ++i) {	
 		if (region[i].type>4)
 			region[i].type=1;
 
 		if (i>0 && region[i].startLo==0)
 			break;
 
-        kprint("\nddress ");
-       
-        int_to_ascii(region[i].startHi, sc_ascii);
-        kprint(sc_ascii);
-        kprint(" ");
-
-		int_to_ascii(region[i].startLo, sc_ascii);
-        kprint(sc_ascii);
-        kprint("\nlength ");
-        int_to_ascii(region[i].sizeHi, sc_ascii);
-        kprint(sc_ascii);
-        kprint(" ");
-
-        int_to_ascii(region[i].sizeLo, sc_ascii);
-        kprint(sc_ascii);
+        printk("Address: %x	\n", region[i].startLo);
+        printk("length: %d \n", region[i].sizeLo);
 
 		if (region[i].type==1)
-			pmmngr_init_region (region[i].startLo, region[i].sizeLo);
+			pmmngr_init_region(region[i].startLo, region[i].sizeLo);
 	}
-
-	kprint("\n");
-
-	// char arr[512];
-    // read_sector(200, arr);
-
-
-    // kprint("First 16 bytes as string: \n");
-    // for(int i = 0; i < 16; i++) {
-    //     if(arr[i] == 0) break;
-	// 	char temp[5];
-	// 	int_to_ascii(arr[i], temp);
-    //     kprint(temp);
-    // }
-    kprint('\n');
-
-	fat12_init();
-	printk_init();
-	shell_init();
-
-	int a = 10;
-	char b = 'f';
-	char *str = "This is log\0";
-	printk("Value of int is %d, char is %c, and string is %s and this is hex %x\n"
-			, a, b, str, a);
-
-	pr_debug("","This is DEBUG print");
-	pr_info("","This is INFO print");
-	pr_err("","This is ERROR print");
-	pr_warn("","This is WARN print");
-	set_log_level(KERN_DEBUG);
-	pr_debug("","This is DEBUG print");
-
-	printk("Zero: %d\n", 0);           // Should print "0"
-	printk("Negative: %d\n", -42);     // Should print "-42"
-	printk("Hex zero: %x\n", 0);       // Should print "0x0"
-	printk("Hex: %x\n", 0xDEADBEEF);   // Should print "0xDEADBEEF"
-	printk("Mixed: %d, %x, %s\n", 10, 0xFF, "test");
-
-	pr_debug("MAIN", "This is integer %d", 512);
-	while(1)
-	{
-		printk_color(VGA_COLOR_GREEN,"\nTenOS> ");
-		shell_process();
-	}
-	// fat12_create("OSAMAOS.txt", 100);
-	// char *name = "My name is Osama\0";
-
-	// fat12_write(fat12_open("OSAMAOS.txt"), name, 100);
-
-	// char arr[512] = {0};
-
-	// fat12_read(fat12_open("OSAMAOS.txt"), arr, 100);
-
-	// kprint(arr);
+	printk_color(VGA_COLOR_MAGENTA,"===========MEMORY MAP END========== \n");
+	printk("Kernel stack top %x\n ", &_stack_top);
 	
-	// vmmngr_initialize();
+	vmmngr_initialize();	
+
+	// Allocate user stack
+    u32 user_stack = (u32)vmmngr_alloc_page() + 0x1000;
+
+	tss_init(&_stack_top);
+	// test_gdt_and_tss();
+	jump_usermode(user_stack);
 
 	// u32* p = (u32*)vmmngr_alloc_page();
 	// kprint("address\n");
