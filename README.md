@@ -26,7 +26,7 @@ A hobby operating system kernel written in C and x86 Assembly, featuring a compl
   - Programmable Interval Timer (PIT)
 
 ### Drivers
-- **VGA Text Mode Driver**: 80x25 color text output with scrolling
+- **VGA Text Mode Driver**: 80x25 color text output
 - **Keyboard Driver**: PS/2 keyboard with full scancode translation
   - Support for Shift, Ctrl, Alt, Caps Lock
   - Line-buffered input for user programs
