@@ -1,7 +1,7 @@
 #ifndef _MMNGR_VIRT_PTE_H
 #define _MMNGR_VIRT_PTE_H
 
-#include "memory.h"	//physical_addr
+#include "memory.h"
 
 enum PAGE_PTE_FLAGS {
 
@@ -18,25 +18,25 @@ enum PAGE_PTE_FLAGS {
    	I86_PTE_FRAME			=	0x7FFFF000 	//1111111111111111111000000000000
 };
 
-//! page table entry
+// page table entry
 typedef u32 pt_entry;
 
-//! sets a flag in the page table entry
-void pt_entry_add_attrib (pt_entry* e, u32 attrib);
+// sets a flag in the page table entry
+void pt_entry_add_attrib(pt_entry* e, u32 attrib);
 
-//! clears a flag in the page table entry
-void pt_entry_del_attrib (pt_entry* e, u32 attrib);
+// clears a flag in the page table entry
+void pt_entry_del_attrib(pt_entry* e, u32 attrib);
 
-//! sets a frame to page table entry
-void pt_entry_set_frame (pt_entry*, u32);
+// sets a frame to page table entry
+void pt_entry_set_frame(pt_entry*, u32);
 
-//! test if page is present
-u32 pt_entry_is_present (pt_entry e);
+// test if page is present
+u32 pt_entry_is_present(pt_entry e);
 
-//! test if page is writable
-u32 pt_entry_is_writable (pt_entry e);
+// test if page is writable
+u32 pt_entry_is_writable(pt_entry e);
 
-//! get page table entry frame address
-u32 pt_entry_pfn (pt_entry e);
+// get page table entry frame address
+u32 pt_entry_pfn(pt_entry e);
 
 #endif

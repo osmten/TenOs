@@ -36,7 +36,7 @@ int fat12_init(void) {
     // data_start = 136 + 32 = 168
     
     // Allocate and load FAT into memory
-    mount_info.fat_buffer =  (u8*)pmmngr_alloc_block();//malloc(mount_info.sectors_per_fat * 512);
+    mount_info.fat_buffer =  (u8*)alloc_memory_block();//malloc(mount_info.sectors_per_fat * 512);
     if (!mount_info.fat_buffer) {
         return -1;
     }
@@ -125,7 +125,7 @@ FAT12_File* fat12_open(const char *filename) {
             if (memcmp(entries[i].filename, dos_name, 11) == 0) {
                 // Found it!
                 pr_debug("FS", "FILE FOUND\n");
-                FAT12_File *file = (FAT12_File*)pmmngr_alloc_block();
+                FAT12_File *file = (FAT12_File*)alloc_memory_block();
                 if (!file) return 0;
     
                 memory_copy(file->name, filename, 256);

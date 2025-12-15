@@ -31,7 +31,3 @@ inline u32 pd_entry_is_user (pd_entry e) {
 inline u32 pd_entry_is_4mb (pd_entry e) {
 	return e & I86_PDE_4MB;
 }
-
-inline void pd_entry_enable_global (pd_entry e) {
-
-}

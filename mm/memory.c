@@ -5,198 +5,169 @@ static u32 mem_mngr_max_blocks = 0;
 static u32 mem_mngr_used_blocks = 0;
 static u32 mem_mngr_size = 0;
 
-//! set any bit (frame) within the memory map bit array
-void mmap_set (int bit);
-
-//! unset any bit (frame) within the memory map bit array
-void mmap_unset (int bit);
-
-//! test any bit (frame) within the memory map bit array
-int mmap_test (int bit);
-
-//! finds first free frame in the bit array and returns its index
-int mmap_first_free ();
-
-//! finds first free "size" number of frames and returns its index
-int mmap_first_free_s (u32 size);
-
 void init_mem_mngr(u32 addr, u32 size)
 {
-
-	mem_mngr_size	=	size;
-	mem_mngr	    =	(u32*) addr;
-	mem_mngr_max_blocks	=	(pmmngr_get_memory_size()*1024) / PMMNGR_BLOCK_SIZE;
+	mem_mngr_size			=	size;
+	mem_mngr	    		=	(u32*)addr;
+	mem_mngr_max_blocks		=	(get_memory_size() * 1024) / MEMORY_BLOCK_SIZE;
 	mem_mngr_used_blocks	=	mem_mngr_max_blocks;
 
-	//! By default, all of memory is in use
-	memory_set((u8*)mem_mngr, 0xf, pmmngr_get_block_count() / PMMNGR_BLOCKS_PER_BYTE );
+	// By default, all of memory is in use
+	memory_set((u8*)mem_mngr, 0xf, get_block_count() / MEMORY_BLOCKS_PER_BYTE );
 }
 
-void pmmngr_init_region (u32 base, u32 size) {
+void init_memory_region(u32 base, u32 size) {
 
-	int align = base / PMMNGR_BLOCK_SIZE;
-	int blocks = size / PMMNGR_BLOCK_SIZE;
+	int align = base / MEMORY_BLOCK_SIZE;
+	int blocks = size / MEMORY_BLOCK_SIZE;
 
 	for (; blocks>=0; blocks--) {
-		mmap_unset (align++);
+		mmap_unset(align++);
 		mem_mngr_used_blocks--;
 	}
 
-	mmap_set (0);	//first block is always set. This insures allocs cant be 0
+	mmap_set(0);
 }
 
-//! set any bit (frame) within the memory map bit array
-void mmap_set (int bit) {
-
+// set any bit (frame) within the memory map bit array
+void mmap_set(int bit) {
   mem_mngr[bit / 32] |= (1 << (bit % 32));
 }
 
-//! unset any bit (frame) within the memory map bit array
-void mmap_unset (int bit) {
-
-  mem_mngr[bit / 32] &= ~ (1 << (bit % 32));
+// unset any bit (frame) within the memory map bit array
+void mmap_unset(int bit) {
+  mem_mngr[bit / 32] &= ~(1 << (bit % 32));
 }
 
-//! test if any bit (frame) is set within the memory map bit array
-int mmap_test (int bit) {
-
+// test if any bit (frame) is set within the memory map bit array
+int mmap_test(int bit) {
 	return mem_mngr[bit / 32] &  (1 << (bit % 32));
 }
 
-
-//! finds first free frame in the bit array and returns its index
-int mmap_first_free () {
-
-	//! find the first free bit
-	for (u32 i=0; i< pmmngr_get_block_count() /32; i++)
+// finds first free frame in the bit array and returns its index
+int mmap_first_free() {
+	for (u32 i = 0; i < get_block_count() / 32; i++)
+	{
 		if (mem_mngr[i] != 0xffffffff)
-			for (int j=0; j<32; j++) {				//! test each bit in the dword
-
+			for (int j=0; j<32; j++) {
 				int bit = 1 << j;
-				if (! (mem_mngr[i] & bit) )
+				if (!(mem_mngr[i] & bit))
 					return i*4*8+j;
 			}
+	}
 
 	return -1;
 }
 
-//! finds first free "size" number of frames and returns its index
-int mmap_first_free_s (u32 size) {
+// finds first free "size" number of frames and returns its index
+int mmap_first_free_s(u32 size) {
 
-	if (size==0)
+	if (size == 0)
 		return -1;
 
-	if (size==1)
-		return mmap_first_free ();
+	if (size == 1)
+		return mmap_first_free();
 
-	for (u32 i=0; i<pmmngr_get_block_count() /32; i++)
+	for (u32 i = 0; i < get_block_count() / 32; i++)
+	{
 		if (mem_mngr[i] != 0xffffffff)
-			for (int j=0; j<32; j++) {	//! test each bit in the dword
-
+		{
+			for (int j = 0; j < 32; j++) {
 				int bit = 1<<j;
-				if (! (mem_mngr[i] & bit) ) {
+				if (!(mem_mngr[i] & bit)) {
+					int starting_bit = i*32;
+					starting_bit += j;
 
-					int startingBit = i*32;
-					startingBit+=bit;		//get the free bit in the dword at index i
+					u32 free = 0; //loop through each bit to see if its enough space
+					for (u32 count = 0; count <= size; count++) {
+						if (!mmap_test(starting_bit + count))
+							free++;
 
-					u32 free=0; //loop through each bit to see if its enough space
-					for (u32 count=0; count<=size;count++) {
-
-						if (!mmap_test(startingBit+count))
-							free++;	// this bit is clear (free frame)
-
-						if (free==size)
-							return i*4*8+j; //free count==size needed; return index
+						if (free == size)
+							return i*4*8+j;
 					}
 				}
 			}
+		}
+	}
 
 	return -1;
 }
 
 
-void*	pmmngr_alloc_block () {
+void* alloc_memory_block() {
 
-	if (pmmngr_get_free_block_count() <= 0)
+	if (get_free_block_count() <= 0)
 		return 0;	//out of memory
 
-	int frame = mmap_first_free ();
+	int frame = mmap_first_free();
 
 	if (frame == -1)
 		return 0;	//out of memory
 
-	mmap_set (frame);
+	mmap_set(frame);
 
-	u32 addr = frame * PMMNGR_BLOCK_SIZE;
+	u32 addr = frame * MEMORY_BLOCK_SIZE;
 	mem_mngr_used_blocks++;
 
 	return (void*)addr;
 }
 
 
-void	pmmngr_free_block (void* p) {
+void free_memory_block(void* p) {
 
 	u32 addr = (u32)p;
-	int frame = addr / PMMNGR_BLOCK_SIZE;
+	int frame = addr / MEMORY_BLOCK_SIZE;
 
-	mmap_unset (frame);
-
+	mmap_unset(frame);
 	mem_mngr_used_blocks--;
 }
 
-void*	pmmngr_alloc_blocks (u32 size) {
+void* alloc_memory_blocks(u32 size) {
 
-	if (pmmngr_get_free_block_count() <= size)
+	if (get_free_block_count() <= size)
 		return 0;	//not enough space
 
-	int frame = mmap_first_free_s (size);
+	int frame = mmap_first_free_s(size);
 
 	if (frame == -1)
 		return 0;	//not enough space
 
-	for (u32 i=0; i<size; i++)
-		mmap_set (frame+i);
+	for (u32 i = 0; i < size; i++)
+		mmap_set(frame + i);
 
-	u32 addr = frame * PMMNGR_BLOCK_SIZE;
-	mem_mngr_used_blocks+=size;
+	u32 addr = frame * MEMORY_BLOCK_SIZE;
+	mem_mngr_used_blocks += size;
 
 	return (void*)addr;
 }
 
-void pmmngr_free_blocks (void* p, u32 size) {
+void free_memory_blocks(void* p, u32 size) {
 
 	u32 addr = (u32)p;
-	int frame = addr / PMMNGR_BLOCK_SIZE;
+	int frame = addr / MEMORY_BLOCK_SIZE;
 
-	for (u32 i=0; i<size; i++)
-		mmap_unset (frame+i);
+	for (u32 i = 0; i < size; i++)
+		mmap_unset(frame + i);
 
-		mem_mngr_used_blocks-=size;
+	mem_mngr_used_blocks-=size;
 }
 
-u32	pmmngr_get_memory_size () {
-
+/*--------------Helper Functions---------------*/
+static u32	get_memory_size() {
 	return mem_mngr_size;
 }
 
-u32 pmmngr_get_block_count () {
-
+static u32 get_block_count() {
 	return mem_mngr_max_blocks;
 }
 
-u32 pmmngr_get_use_block_count () {
-
+static u32 get_use_block_count() {
 	return mem_mngr_used_blocks;
 }
 
-u32 pmmngr_get_free_block_count () {
-
+static u32 get_free_block_count() {
 	return mem_mngr_max_blocks - mem_mngr_used_blocks;
-}
-
-u32 pmmngr_get_block_size () {
-
-	return PMMNGR_BLOCK_SIZE;
 }
 
 void pmmngr_paging_enable(u32 b) {
@@ -216,7 +187,7 @@ void pmmngr_paging_enable(u32 b) {
     );
 }
 
-u32 pmmngr_is_paging() {
+u32 is_paging() {
     u32 res;
     asm volatile (
         "mov %%cr0, %0"
@@ -226,7 +197,8 @@ u32 pmmngr_is_paging() {
     );
     return (res & 0x80000000) ? 1 : 0;  // Fixed logic (returns 1 if paging enabled)
 }
-void pmmngr_load_PDBR(u32 addr) {
+
+void load_PDBR(u32 addr) {
     asm volatile (
         "mov %0, %%cr3"
         : /* no outputs */
@@ -234,7 +206,8 @@ void pmmngr_load_PDBR(u32 addr) {
         : "memory"
     );
 }
-u32 pmmngr_get_PDBR() {
+
+u32 get_PDBR() {
     u32 val;
     asm volatile (
         "mov %%cr3, %0"

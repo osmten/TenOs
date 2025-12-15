@@ -22,14 +22,14 @@ void main(struct multiboot_info* bootinfo){
 	struct memory_region* region = (struct memory_region*)bootinfo->m_mmap_addr;
 	int size = bootinfo->m_mmap_length/24;
 
-	//! get memory size in KB
+	// get memory size in KB
 	u32 memSize = 1024 + bootinfo->m_memoryLo + bootinfo->m_memoryHi*64;
 
 	pr_debug("KERNEL", "Kernel ends at: %x\n", (u32)&kernel_end);
     pr_debug("KERNEL", "Bitmap starts at: %x\n", bitmap_addr);
 
 	pr_info("Memory","Total Size %d", memSize);
-	printk_color(VGA_COLOR_MAGENTA,"===========MEMORY MAP========== \n");
+	printk_color(VGA_COLOR_MAGENTA,"===========MEMORY MAP START========== \n");
 
 	init_mem_mngr(bitmap_addr, memSize);
 
@@ -44,7 +44,7 @@ void main(struct multiboot_info* bootinfo){
         printk("length: %d \n", region[i].sizeLo);
 
 		if (region[i].type==1)
-			pmmngr_init_region(region[i].startLo, region[i].sizeLo);
+			init_memory_region(region[i].startLo, region[i].sizeLo);
 	}
 	printk_color(VGA_COLOR_MAGENTA,"===========MEMORY MAP END========== \n");
 	printk("Kernel stack top %x\n ", &_stack_top);
