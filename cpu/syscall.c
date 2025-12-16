@@ -14,16 +14,14 @@ static command_t commands[] = {
 
 static void cmd_help(const char* args)
 {
-    kprint("\nAvailable Commands \n");
+    printk_color(VGA_COLOR_MAGENTA,"\n==============Available Commands=============\n");
 
+    printk_color(VGA_COLOR_GREEN, "---------------------------------------------------\n");
     for (int i = 0; commands[i].name != NULL; i++)
     {
-        kprint(" Name ->  ");
-        kprint(commands[i].name);
-        kprint("        ");
-        kprint("Description -> ");
-        kprint(commands[i].description);
-        kprint("\n");
+        printk_color(VGA_COLOR_CYAN, "Name of the cmd -----> %s\n", commands[i].name);
+        printk_color(VGA_COLOR_CYAN, "Description of the cmd ------> %s\n", commands[i].description);
+        printk_color(VGA_COLOR_GREEN, "---------------------------------------------------\n");
     }
 }
 
@@ -34,14 +32,12 @@ static void cmd_clear(const char* args)
 
 static void cmd_echo(const char *args)
 {
-    kprint("\n");
-    kprint(args);
-    kprint("\n");
+    printk("\n");
+    printk("%s\n", args);
 }
 
 static void cmd_create_file(const char *args)
 {
-    kprint("\n");
     char name[12] = {0};
     int i = 0;
     FAT12_File* fp;
@@ -63,11 +59,11 @@ static void cmd_create_file(const char *args)
         i++;
     }
 
-    fat12_create(name, 256); /*hardcoded for now*/
+    fat12_create(name, 256);
     fp = fat12_open(name);
     fat12_write(fp, buff, 256);
 
-    kprint("\n File Created\n");
+    printk_color(VGA_COLOR_YELLOW, "\nFile %s Created\n", name);
 }
 
 static void cmd_cat(const char *args)
@@ -86,20 +82,20 @@ static void cmd_cat(const char *args)
     fp = fat12_open(name);
     fat12_read(fp, buff, 256);
 
-    kprint("\n");
-    kprint(buff);
-    kprint("\nFile Ended\n");
+    printk("\nFile %s Contents :- \n", name);
+    printk("%s", buff);
+    printk("\nFile Ended\n");
 }
 
 static void cmd_ls(const char *args)
 {
-    kprint("\n");
+    printk("\n");
     fat12_list_root();
-    kprint("\n");
+    printk("\n");
 }
 
 
-int process_cmd(char *buff)
+int process_cmd(const char *buff)
 {
     char cmd[20] = {0};
     int i = 0;
@@ -107,7 +103,7 @@ int process_cmd(char *buff)
     while(*buff == ' ')
         buff++;
     
-    while(*buff != ' ' && *buff != NULL) {
+    while(*buff != ' ' && *buff != '\0') {
         cmd[i] = *buff;
         i++;
         buff++;
@@ -140,9 +136,7 @@ int process_cmd(char *buff)
         cmd_ls(buff);
     }
     else {
-        kprint("\nNot implemented cmd -> ");
-        kprint(cmd);
-        kprint("\n");
+        printk_color(VGA_COLOR_RED,"\n %s cmd not implemented\n", cmd);
     }
     return 0;
 }
@@ -151,9 +145,7 @@ int process_cmd(char *buff)
 // Main syscall dispatcher
 u32 syscall_dispatcher(u32 syscall_num, u32 arg1, u32 arg2, u32 arg3, u32 arg4, u32 arg5) {
     // This function runs in RING 0 (kernel mode)
-    // Even though it was called from ring 3!
     
-    // Dispatch based on syscall number
     switch(syscall_num) {
         case SYS_EXIT:
             return sys_exit(arg1);
@@ -178,23 +170,19 @@ u32 syscall_dispatcher(u32 syscall_num, u32 arg1, u32 arg2, u32 arg3, u32 arg4, 
 
 // Syscall 0: Exit
 u32 sys_exit(u32 code) {
+
     printk("\n[KERNEL] Process exited with code: %d\n", code);
     printk("[KERNEL] System halted.\n");
 
-    while(1) asm("hlt");
+    while(1)
+        asm("hlt");
     
     return 0;
 }
 
 u32 sys_print(const char *str, int color) {
     // CRITICAL: Validate pointer!
-    // User could pass a kernel address to read kernel memory!
-    
-    // Check if pointer is in user space
-    // if((u32)str >= 0xC0000000) {  // Assuming kernel at 3GB+
-    //     printk("[KERNEL] Invalid pointer from user space: 0x%x\n", (u32)str);
-    //     return -1;  // Error: EFAULT (bad address)
-    // }
+    // TODO: Linux like copy from user     
     
     if(color == 0)
     {
@@ -219,9 +207,10 @@ u32 sys_print(const char *str, int color) {
 }
 
 u32 sys_read(u32 fd, char *buf, u32 count) {
-    pr_debug("KERNEL", "sys_read handler called\n");
 
-    if (fd != 0) return -1;
+    pr_debug("KERNEL", "sys_read handler called\n");
+    if (fd != 0)
+        return -1;
 
     return keyboard_read(buf, count);
 }

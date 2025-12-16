@@ -1,42 +1,34 @@
 #include "fs.h"
 
-// Disk I/O functions (you need to implement these)
-
 static FAT12_MountInfo mount_info;
 static u8 sector_buffer[512];
 
 // Initialize FAT12 filesystem
 int fat12_init(void) {
+
     // Read boot sector (sector 0)
     read_sector(0, sector_buffer);
     BPB *bpb = (BPB*)sector_buffer;
     
-    // Verify filesystem
     if (memcmp(bpb->filesystem_type, "FAT12   ", 8) != 0) {
-        return -1; // Not FAT12
+        return -1;
     }
     
-    // Store mount information
     mount_info.bytes_per_sector = bpb->bytes_per_sector;          // 512
     mount_info.sectors_per_cluster = bpb->sectors_per_cluster;    // 1
     mount_info.sectors_per_fat = bpb->sectors_per_fat;            // 12
     mount_info.root_entries = bpb->root_entries;                  // 512
     
-    // Calculate filesystem layout
     mount_info.fat_start = bpb->reserved_sectors;                 // 112
     
     mount_info.root_start = mount_info.fat_start + 
                            (bpb->num_fats * mount_info.sectors_per_fat);
-    // root_start = 112 + (2 × 12) = 136
     
     mount_info.root_size = (bpb->root_entries * 32) / bpb->bytes_per_sector;
-    // root_size = (512 × 32) / 512 = 32 sectors
     
     mount_info.data_start = mount_info.root_start + mount_info.root_size;
-    // data_start = 136 + 32 = 168
     
-    // Allocate and load FAT into memory
-    mount_info.fat_buffer =  (u8*)alloc_memory_block();//malloc(mount_info.sectors_per_fat * 512);
+    mount_info.fat_buffer =  (u8*)alloc_memory_block();
     if (!mount_info.fat_buffer) {
         return -1;
     }
@@ -71,7 +63,7 @@ int fat12_init(void) {
 
 // Convert filename to DOS 8.3 format
 static void to_dos_filename(const char *input, char *output) {
-    memory_set(output, ' ', 11);
+    memset(output, ' ', 11);
     
     int i = 0, j = 0;
     
@@ -101,7 +93,6 @@ FAT12_File* fat12_open(const char *filename) {
     char dos_name[11];
     to_dos_filename(filename, dos_name);
     
-    // Search root directory
     for (u32 sector = 0; sector < mount_info.root_size; sector++) {
         
         read_sector(mount_info.root_start + sector, sector_buffer);
@@ -113,7 +104,7 @@ FAT12_File* fat12_open(const char *filename) {
             
             // End of directory?
             if (entries[i].filename[0] == 0x00) {
-                return 0;  // Not found
+                return 0;
             }
             
             // Deleted entry?
@@ -121,14 +112,12 @@ FAT12_File* fat12_open(const char *filename) {
                 continue;
             }
 
-            // Compare filenames
             if (memcmp(entries[i].filename, dos_name, 11) == 0) {
-                // Found it!
                 pr_debug("FS", "FILE FOUND\n");
                 FAT12_File *file = (FAT12_File*)alloc_memory_block();
                 if (!file) return 0;
     
-                memory_copy(file->name, filename, 256);
+                memcpy(file->name, (char *)filename, 256);
                 file->first_cluster = entries[i].first_cluster;
                 file->current_cluster = entries[i].first_cluster;
                 file->file_size = entries[i].file_size;
@@ -141,11 +130,12 @@ FAT12_File* fat12_open(const char *filename) {
         }
     }
     
-    return 0;  // Not found
+    return 0;
 }
 
 // Get next cluster from FAT12
 static u16 get_next_cluster(u16 cluster) {
+
     // FAT12: each entry is 12 bits (1.5 bytes)
     u32 fat_offset = cluster + (cluster / 2);
     
@@ -169,10 +159,8 @@ static void set_cluster_value(u16 cluster, u16 value) {
     u16 *fat_entry = (u16*)(mount_info.fat_buffer + fat_offset);
     
     if (cluster & 1) {
-        // Odd cluster
         *fat_entry = (*fat_entry & 0x000F) | (value << 4);
     } else {
-        // Even cluster
         *fat_entry = (*fat_entry & 0xF000) | (value & 0x0FFF);
     }
 }
@@ -200,23 +188,20 @@ int fat12_read(FAT12_File *file, u8 *buffer, u32 size) {
     }
     
     while (size > 0 && file->current_cluster < FAT12_EOF_MIN) {
-        // Convert cluster to LBA
+
         u32 lba = mount_info.data_start + 
                       (file->current_cluster - 2) * mount_info.sectors_per_cluster;
         
-        // Read cluster
         read_sector(lba, sector_buffer);
         
-        // Copy data
         u32 bytes_to_copy = (size > 512) ? 512 : size;
-        memory_copy(buffer, sector_buffer, bytes_to_copy);
+        memcpy(buffer, sector_buffer, bytes_to_copy);
         
         buffer += bytes_to_copy;
         size -= bytes_to_copy;
         bytes_read += bytes_to_copy;
         file->position += bytes_to_copy;
         
-        // Get next cluster
         file->current_cluster = get_next_cluster(file->current_cluster);
     }
     
@@ -235,7 +220,7 @@ static u16 find_free_cluster(void) {
             return cluster;
         }
     }
-    return 0;  // No free clusters
+    return 0;
 }
 
 // Find free directory entry
@@ -252,7 +237,7 @@ static DirectoryEntry* find_free_dir_entry(u32 *sector_out, u32 *index_out) {
             }
         }
     }
-    return 0;  // Root directory full
+    return 0;
 }
 
 // Create new file
@@ -260,22 +245,16 @@ int fat12_create(const char *filename, u32 size) {
     char dos_name[11] = {0};
     to_dos_filename(filename, dos_name);
     
-    // Check if file already exists
     FAT12_File *existing = fat12_open(filename);
     if (existing) {
         // free(existing);
-        return -1;  // File exists
+        return -1;
     }
-    kprint("\nCreated FileName : ");
-    kprint(dos_name);
-    kprint("\n");
-
     
-    // Find free directory entry
     u32 dir_sector, dir_index;
     DirectoryEntry *entry = find_free_dir_entry(&dir_sector, &dir_index);
     if (!entry) {
-        return -1;  // Root directory full
+        return -1;
     }
     
     // Allocate clusters for file
@@ -286,7 +265,7 @@ int fat12_create(const char *filename, u32 size) {
     for (u32 i = 0; i < clusters_needed; i++) {
         u16 cluster = find_free_cluster();
         if (cluster == 0) {
-            return -1;  // Disk full
+            return -1;
         }
         
         if (i == 0) {
@@ -299,22 +278,19 @@ int fat12_create(const char *filename, u32 size) {
         prev_cluster = cluster;
     }
     
-    // Write FAT
     sync_fat();
     
-    // Create directory entry
     read_sector(mount_info.root_start + dir_sector, sector_buffer);
     DirectoryEntry *entries = (DirectoryEntry*)sector_buffer;
     
-    memory_copy(entries[dir_index].filename, dos_name, 11);
+    memcpy(entries[dir_index].filename, dos_name, 11);
     entries[dir_index].attributes = ATTR_ARCHIVE;
     entries[dir_index].first_cluster = first_cluster;
     entries[dir_index].file_size = size;
 
-    // Write directory entry
     write_sector(mount_info.root_start + dir_sector, sector_buffer);
-    
-    return 0;  // Success
+
+    return 0;
 }
 
 // Write to file
@@ -325,23 +301,20 @@ int fat12_write(FAT12_File *file, const u8 *buffer, u32 size) {
     file->current_cluster = file->first_cluster;
     
     while (size > 0 && file->current_cluster < FAT12_EOF_MIN) {
-        // Convert cluster to LBA
+
         u32 lba = mount_info.data_start + 
                       (file->current_cluster - 2) * mount_info.sectors_per_cluster;
         
-        // Copy data
         u32 bytes_to_write = (size > 512) ? 512 : size;
-        memory_set(sector_buffer, 0, 512);
-        memory_copy(sector_buffer, buffer, bytes_to_write);
+        memset(sector_buffer, 0, 512);
+        memcpy(sector_buffer, (char *)buffer, bytes_to_write);
         
-        // Write sector
         write_sector(lba, sector_buffer);
         
         buffer += bytes_to_write;
         size -= bytes_to_write;
         bytes_written += bytes_to_write;
         
-        // Next cluster
         file->current_cluster = get_next_cluster(file->current_cluster);
     }
     
@@ -359,7 +332,6 @@ int fat12_list_root(void) {
         DirectoryEntry *entries = (DirectoryEntry*)sector_buffer;
         
         for (int i = 0; i < 16; i++) {
-            // End of directory?
             if (entries[i].filename[0] == 0x00) {
                 goto end_list;
             }
@@ -373,7 +345,6 @@ int fat12_list_root(void) {
                 continue;
             }
             
-            // Print filename
             char name[13];
             int j;
             for (j = 0; j < 8 && entries[i].filename[j] != ' '; j++) {

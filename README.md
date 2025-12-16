@@ -147,6 +147,9 @@ Stay tuned!
 ### User Mode Shell
 ![Shell](screenshots/Commands.png)
 
+### Help Command
+![Help](screenshots/Help.png)
+
 ---
 
 **Happy Hacking!!**

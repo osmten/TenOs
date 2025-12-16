@@ -47,5 +47,6 @@ int print_char(char c, int col, int row, char attr);
 int get_offset(int col, int row);
 int get_offset_row(int offset);
 int get_offset_col(int offset);
+void put_char(char a, char attr);
 
 #endif

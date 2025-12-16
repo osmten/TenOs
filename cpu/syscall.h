@@ -35,7 +35,7 @@ static void cmd_cat(const char *args);
 static void cmd_create_file(const char *args);
 static void cmd_cat(const char *args);
 static void cmd_meminfo(const char *args);
-int process_cmd();
+int process_cmd(const char *buff);
 
 // Syscall handler
 u32 syscall_dispatcher(u32 syscall_num, u32 arg1, u32 arg2, u32 arg3, u32 arg4, u32 arg5);

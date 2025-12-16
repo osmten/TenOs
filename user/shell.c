@@ -12,6 +12,8 @@ void shell_main() {
     
     print("\n========================================\n");
     print("  TenOS Shell v0.2 (User Mode)\n");
+    print("  Running in Ring 3!\n");
+    print("  Type 'help' for commands\n");
     print("========================================\n\n");
     
     while(1) {

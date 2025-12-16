@@ -105,8 +105,6 @@ stage2_main:
 %include "boot/32bit_print.asm"
 %include "boot/switch_pm.asm"
 %include "boot/memory.asm"
-; %include "boot/paging.asm"
-
 
 [bits 16]
 load_kernel:

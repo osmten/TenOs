@@ -12,7 +12,7 @@
 #include <cpu/gdt.h>
 #include <drivers/ports.h>
 #include <fs/fs.h>
-// #include "shell.h"
+#include "jmp_user.h"
 
 extern void kernel_gdt_load();
 

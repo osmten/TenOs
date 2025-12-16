@@ -3,6 +3,7 @@
 
 #include <lib/lib.h>
 #include <drivers/ata.h>
+#include <mm/memory.h>
 
 // BPB Structure (matches boot sector)
 typedef struct {

@@ -91,7 +91,7 @@ void vmmngr_map_page(void* phys, void* virt) {
          return;
 
       // clear page table
-      memory_set((u8*)table, 0, sizeof(struct ptable));
+      memset((u8*)table, 0, sizeof(struct ptable));
 
       // create a new entry
       pd_entry* entry =
@@ -123,7 +123,7 @@ void vmmngr_initialize() {
    for (int i = 0; i < 5; i++)
    {
       table[i] = (struct ptable*)alloc_memory_block();
-      memory_set((u8*)table[i], 0, sizeof (struct ptable)); // clear page table
+      memset((u8*)table[i], 0, sizeof (struct ptable)); // clear page table
    }
    
    // Idenitity mapped
@@ -148,7 +148,7 @@ void vmmngr_initialize() {
    if (!dir)
       return;
 
-   memory_set((u8*)dir, 0, sizeof (struct pdirectory));
+   memset((u8*)dir, 0, sizeof (struct pdirectory));
 
    for (int i = 0; i < 5; i++)
    {

@@ -4,6 +4,7 @@
 #include <lib/lib.h>
 #include <drivers/ports.h>
 #include <drivers/screen.h>
+#include "idt.h"
 
 #define KERNEL_CS 0x08
 

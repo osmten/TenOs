@@ -34,7 +34,7 @@ void tss_init(u32 kernel_stack) {
     pr_debug("TSS","TSS size: %d bytes\n", sizeof(tss));
     pr_debug("TSS","Kernel stack: %x\n", kernel_stack);
     
-    memory_set((u8*)&tss, 0, sizeof(tss));
+    memset((u8*)&tss, 0, sizeof(tss));
     
     // Set kernel stack (used when switching from ring 3 to ring 0)
     tss.ss0 = DATA_SEG;

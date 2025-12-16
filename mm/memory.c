@@ -13,7 +13,7 @@ void init_mem_mngr(u32 addr, u32 size)
 	mem_mngr_used_blocks	=	mem_mngr_max_blocks;
 
 	// By default, all of memory is in use
-	memory_set((u8*)mem_mngr, 0xf, get_block_count() / MEMORY_BLOCKS_PER_BYTE );
+	memset((u8*)mem_mngr, 0xf, get_block_count() / MEMORY_BLOCKS_PER_BYTE );
 }
 
 void init_memory_region(u32 base, u32 size) {
