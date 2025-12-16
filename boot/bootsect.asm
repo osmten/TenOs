@@ -64,12 +64,11 @@ load_stage2:
     call disk_load
     ret
 
-BOOT_DRIVE db 0 ; It is a good idea to store it in memory because 'dl' may get overwritten
+BOOT_DRIVE db 0
 MSG_REAL_MODE db "Started in 16-bit Real Mode", 0
 MSG_LOAD_STAGE_2 db "Jumping to second stage bootlaoder", 0
 MSG_RETURNED_KERNEL db "Returned from kernel. Error?", 0
 MSG_DEBUG_DRIVE db "Drive: 0x", 0
 
-; padding
 times 510 - ($-$$) db 0
 dw 0xaa55

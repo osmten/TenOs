@@ -8,7 +8,7 @@ switch_to_pm:
     jmp CODE_SEG:init_pm ; 4. far jump by using a different segment
 
 [bits 32]
-init_pm: ; we are now using 32-bit instructions
+init_pm:
     mov ax, DATA_SEG ; 5. update the segment registers
     mov ds, ax
     mov ss, ax

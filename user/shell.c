@@ -32,7 +32,6 @@ void shell_main() {
             while (*p == ' ') p++;
             if (*p == '\0') continue;
             
-            // Special commands handled in user space
             if (strcmp_user(p, "exit") == 0) {
                 print("\nGoodbye!\n");
                 exit(0);

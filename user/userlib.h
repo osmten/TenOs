@@ -1,4 +1,3 @@
-// userlib.h - User mode library (include this in user programs)
 #ifndef USERLIB_H
 #define USERLIB_H
 
@@ -26,8 +25,6 @@
 #define VGA_COLOR_LIGHT_MAGENTA 13
 #define VGA_COLOR_YELLOW        14
 #define VGA_COLOR_WHITE         15
-
-// User-facing syscall wrappers
 
 // Exit the program
 void exit(int code);

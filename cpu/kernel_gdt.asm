@@ -26,25 +26,22 @@ gdt_data:
     db 0xCF
     db 0x00
 
-; User code (Ring 3) - YOUR ORIGINAL WAS CORRECT!
 gdt_code_user:
     dw 0xFFFF
     dw 0x0000
     db 0x00
-    db 0xFA          ; 11111010 = P=1, DPL=3, D=1, Type=1010 ✓
+    db 0xFA
     db 0xCF
     db 0x00
 
-; User data (Ring 3) - YOUR ORIGINAL WAS CORRECT!
 gdt_data_user:
     dw 0xFFFF
     dw 0x0000
     db 0x00
-    db 0xF2          ; 11110010 = P=1, DPL=3, D=1, Type=0010 ✓
+    db 0xF2
     db 0xCF
     db 0x00
 
-; TSS (to be filled at runtime)
 gdt_tss:
     dw 0x0068        ; Limit (104 bytes - 1)
     dw 0x0000        ; Base low (set in C)

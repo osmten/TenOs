@@ -13,10 +13,10 @@ void jump_usermode(u32 user_stack) {
     printk("Current CPL: %d\n", get_cpl());
     
     asm volatile(
-        "cli\n"                  // Disable interrupts during transition
+        "cli\n"
         
         // Set data segments to user data segment
-        "mov $0x23, %%ax\n"      // 0x23 = user data selector (0x20 | 0x3)
+        "mov $0x23, %%ax\n"
         "mov %%ax, %%ds\n"
         "mov %%ax, %%es\n"
         "mov %%ax, %%fs\n"

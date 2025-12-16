@@ -5,7 +5,7 @@ static char input_buffer[BUFFER_SIZE];
 static int read_pos = 0;
 static int write_pos = 0;
 
-// Current line being edited (before Enter is pressed)
+// Current line being stored (before Enter is pressed)
 static char line_buffer[BUFFER_SIZE];
 static int line_pos = 0;
 
@@ -51,14 +51,12 @@ static int caps_lock = 0;
 char scancode_to_ascii(u8 scancode, int shift, int caps_lock) {
     if (scancode >= 0x59) return '?';  // Out of range
     
-    // Get base character
     char c = shift ? sc_ascii_shift[scancode] : sc_ascii[scancode];
     
-    // Handle caps lock for letters only
     if (caps_lock && c >= 'a' && c <= 'z') {
-        c = shift ? c : (c - 32);  // Toggle case
+        c = shift ? c : (c - 32);
     } else if (caps_lock && c >= 'A' && c <= 'Z') {
-        c = shift ? (c + 32) : c;  // Toggle case
+        c = shift ? (c + 32) : c;
     }
     
     return c;
@@ -66,23 +64,19 @@ char scancode_to_ascii(u8 scancode, int shift, int caps_lock) {
 
 // Commit current line to the input buffer
 static void commit_line() {
-    // Copy line_buffer to input_buffer
+
     for (int i = 0; i < line_pos; i++) {
         input_buffer[write_pos] = line_buffer[i];
         write_pos = (write_pos + 1) % BUFFER_SIZE;
     }
     
-    // Add newline
     input_buffer[write_pos] = '\n';
     write_pos = (write_pos + 1) % BUFFER_SIZE;
-    
-    // Reset line buffer
+
     line_pos = 0;
 }
 
 void keyboard_callback(registers_t *regs) {
-    /* The PIC leaves us the scancode in port 0x60 */
-    /* Todo: Add handling for extended key codes*/
 
     u8 scancode = port_byte_in(0x60);
     int pressed = !(scancode & 0x80);
@@ -108,44 +102,39 @@ void keyboard_callback(registers_t *regs) {
     
     char c = scancode_to_ascii(scancode, shift_pressed, caps_lock);
     
-    // Handle special keys
     if (c == '\n') {
-        // Enter pressed - commit the line
-        kprint("\n");
+        printk("\n");
         commit_line();
     } 
     else if (c == '\b') {
-        // Backspace
         if (line_pos > 0) {
             line_pos--;
-            kprint("\b");  // Move cursor back and clear character
+            printk("\b");
         }
     }
     else if (c != '?') {
-        // Regular character
         if (line_pos < BUFFER_SIZE - 1) {
             line_buffer[line_pos++] = c;
             
-            // Echo character to screen
             char str[2] = {c, '\0'};
-            kprint(str);
+            printk("%s", str);
         }
     }
     return;
 }
 
-// Check if there's a complete line available (ends with \n)
+// Check if there's a complete line available
 int has_complete_line() {
     int pos = read_pos;
     
     while (pos != write_pos) {
         if (input_buffer[pos] == '\n') {
-            return 1;  // Found a newline
+            return 1;
         }
         pos = (pos + 1) % BUFFER_SIZE;
     }
     
-    return 0;  // No newline found
+    return 0;
 }
 
 // Read from keyboard buffer (called by syscall)
@@ -160,14 +149,11 @@ int keyboard_read(char *user_buf, unsigned int count) {
         asm volatile("hlt");
     }
     
-    // Now we have at least one complete line
-    // Copy characters until newline or buffer full
     while (bytes_read < count && read_pos != write_pos) {
         user_buf[bytes_read] = input_buffer[read_pos];
         read_pos = (read_pos + 1) % BUFFER_SIZE;
         bytes_read++;
         
-        // Stop at newline
         if (user_buf[bytes_read - 1] == '\n') {
             break;
         }

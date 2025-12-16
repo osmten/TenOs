@@ -1,7 +1,7 @@
 [bits 16]
 [org 0x500]
 
-KERNEL_OFFSET equ 0x10000 ; The same one we used when linking the kernel
+KERNEL_OFFSET equ 0x10000
 KERNEL_JUMP   equ 0x100000
 
 struc multiboot_info
@@ -93,7 +93,7 @@ stage2_main:
     mov bx, MSG_PROT_MODE
     call print
 	call print_nl
-    call switch_to_pm ; disable interrupts, load GDT,  etc. Finally jumps to 'BEGIN_PM'
+    call switch_to_pm
 
     jmp $
     
@@ -225,7 +225,7 @@ BEGIN_PM:
     mov ebx, boot_info
     push boot_info
     call KERNEL_JUMP
-    jmp $ ; Stay here when the kernel returns control to us (if ever)
+    jmp $
 
 
 

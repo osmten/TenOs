@@ -14,7 +14,7 @@
 #define REG_SCREEN_CTRL 0x3d4
 #define REG_SCREEN_DATA 0x3d5
 
-
+/* Color Attributes */
 #define VGA_COLOR_BLACK         0
 #define VGA_COLOR_BLUE          1
 #define VGA_COLOR_GREEN         2

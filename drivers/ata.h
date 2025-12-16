@@ -59,7 +59,6 @@
 #define ATA_DRIVE_MASTER        0xE0
 #define ATA_DRIVE_SLAVE         0xF0
 
-// Function prototypes
 void ata_init(void);
 void ata_read_sector(u32 lba, u8 *buffer);
 void ata_write_sector(u32 lba, const u8 *buffer);

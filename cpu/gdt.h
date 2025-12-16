@@ -1,10 +1,7 @@
-// gdt.h
 #ifndef GDT_H
 #define GDT_H
 
 #include <lib/lib.h>
-
-// GDT entry structure (8 bytes)
 typedef struct {
     u16 limit_low;      // Limit bits 0-15
     u16 base_low;       // Base bits 0-15
@@ -22,7 +19,6 @@ typedef struct {
 #define USER_DATA_SEG 0x20
 #define TSS_SEG       0x28
 
-// TSS structure (104 bytes minimum)
 typedef struct {
     u32 prev_tss;
     u32 esp0;       // Kernel stack pointer (IMPORTANT!)
@@ -42,10 +38,8 @@ typedef struct {
     u16 iomap_base;
 } __attribute__((packed)) tss_entry_t;
 
-// Declare GDT from assembly
-extern gdt_entry_t kernel_gdt_start[6];  // 6 entries (null, kcode, kdata, ucode, udata, tss)
+extern gdt_entry_t kernel_gdt_start[6];
 
-// Functions
 void gdt_set_tss(u32 base, u32 limit);
 void tss_init(u32 kernel_stack);
 

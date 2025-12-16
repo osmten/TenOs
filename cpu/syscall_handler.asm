@@ -9,7 +9,6 @@ syscall_handler_asm:
     push ecx
     push edx
     
-    ; Call dispatcher
     push edx
     push ecx
     push ebx

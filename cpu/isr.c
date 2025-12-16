@@ -2,8 +2,6 @@
 
 isr_t interrupt_handlers[256] = {0};
 
-/* Can't do this with a loop because we need the address
- * of the function names */
 void isr_install() {
     set_idt_gate(0, (u32)isr0, KERNEL_CS, 0x8E);
     set_idt_gate(1, (u32)isr1, KERNEL_CS, 0x8E);
@@ -71,7 +69,7 @@ void isr_install() {
     /* system call entry*/
     set_idt_gate(0x80, (u32)syscall_handler_asm, 0x08, 0xEE);
 
-    set_idt(); // Load with ASM
+    set_idt();
 }
 
 /* To print the message which defines every exception */
@@ -114,13 +112,8 @@ char *exception_messages[] = {
 };
 
 void isr_handler(registers_t *r) {
-    kprint("received interrupt: ");
-    char s[3];
-    int_to_ascii(r->int_no, s);
-    kprint(s);
-    kprint("\n");
-    kprint(exception_messages[r->int_no]);
-    kprint("\n");
+    printk("Received interrupt: %d -> %s\n", r->int_no, exception_messages[r->int_no]);
+    /* Todo: Remove this. Add proper handling */
     asm volatile("hlt");
 }
 
@@ -129,12 +122,12 @@ void register_interrupt_handler(u8 n, isr_t handler) {
 }
 
 void irq_handler(registers_t *r) {
-    /* After every interrupt we need to send an EOI to the PICs
+    /* After every interrupt send an EOI to the PICs
      * or they will not send another interrupt again */
+
     if (r->int_no >= 40) port_byte_out(0xA0, 0x20); /* slave */
     port_byte_out(0x20, 0x20); /* master */
 
-    /* Handle the interrupt in a more modular way */
     if (interrupt_handlers[r->int_no] != 0) {
         isr_t handler = interrupt_handlers[r->int_no];
         handler(r);
