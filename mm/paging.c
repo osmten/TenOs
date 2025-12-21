@@ -117,10 +117,10 @@ void vmmngr_map_page(void* phys, void* virt) {
 
 void vmmngr_initialize() {
 
-   struct ptable* table[5];
+   struct ptable* table[30];
    u32 frame = 0, virt = 0, page_directory_addr = 0;
    
-   for (int i = 0; i < 5; i++)
+   for (int i = 0; i < 30; i++)
    {
       table[i] = (struct ptable*)alloc_memory_block();
       memset((u8*)table[i], 0, sizeof (struct ptable)); // clear page table
@@ -128,7 +128,7 @@ void vmmngr_initialize() {
    
    // Idenitity mapped
    int count  = 0;
-   for (int i = 0; i < 5; i++)
+   for (int i = 0; i < 30; i++)
    {
       for (int j=0; j<1024; j++) {
          // create a new page
@@ -150,7 +150,7 @@ void vmmngr_initialize() {
 
    memset((u8*)dir, 0, sizeof (struct pdirectory));
 
-   for (int i = 0; i < 5; i++)
+   for (int i = 0; i < 30; i++)
    {
       // get first entry in dir table and set it up to point to our table
       pd_entry* entry = &dir->m_entries[PAGE_DIRECTORY_INDEX(page_directory_addr)];
