@@ -62,8 +62,12 @@ run: hda.img
 kernel_disassembly.txt: kernel.elf
 	$(DISASM) -d $< > $@
 
+# debug: hda.img kernel.elf
+# 	qemu-system-i386 -hda hda.img -s &
+# 	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
+
 debug: hda.img kernel.elf
-	qemu-system-i386 -hda hda.img -s -S &
+	qemu-system-i386 -hda hda.img -d guest_errors,int & 
 	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
 
 %.o: %.c ${HEADERS}

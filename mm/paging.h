@@ -30,7 +30,7 @@ struct pdirectory {
 
 
 // initialize the memory manager
-void vmmngr_initialize(void);
+void vmmngr_initialize(u32 memSize);
 
 // allocates a page in physical memory
 u32* vmmngr_alloc_page(void);
@@ -39,7 +39,10 @@ u32* vmmngr_alloc_page(void);
 void vmmngr_free_page(pt_entry* e);
 
 // switch to a new page directory
-u32 vmmngr_switch_pdirectory(struct pdirectory*);
+// u32 vmmngr_switch_pdirectory(struct pdirectory*);
+
+u32 vmmngr_switch_pdirectory(u32);
+
 
 // get current page directory
 struct pdirectory* vmmngr_get_directory(void);

@@ -28,7 +28,6 @@ void main(struct multiboot_info* bootinfo){
 	pr_debug("KERNEL", "Kernel ends at: %x\n", (u32)&kernel_end);
     pr_debug("KERNEL", "Bitmap starts at: %x\n", bitmap_addr);
 
-	pr_info("Memory","Total Size %d", memSize);
 	printk_color(VGA_COLOR_MAGENTA,"===========MEMORY MAP START========== \n");
 
 	init_mem_mngr(bitmap_addr, memSize);
@@ -47,15 +46,17 @@ void main(struct multiboot_info* bootinfo){
 			init_memory_region(region[i].startLo, region[i].sizeLo);
 	}
 	printk_color(VGA_COLOR_MAGENTA,"===========MEMORY MAP END========== \n");
+	pr_info("Memory","Total Size %d", memSize);
+
 	printk("Kernel stack top %x\n ", &_stack_top);
 	
-	vmmngr_initialize();	
+	vmmngr_initialize(memSize);	
 
 	// Allocate user stack
-    u32 user_stack = (u32)vmmngr_alloc_page() + 0x1000;
+    // u32 user_stack = (u32)vmmngr_alloc_page() + 0x1000;
 
-	tss_init(&_stack_top);
+	// tss_init(&_stack_top);
 
-	jump_usermode(user_stack);
+	// jump_usermode(user_stack);
 
 }
