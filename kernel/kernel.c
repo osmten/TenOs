@@ -23,8 +23,9 @@ void main(struct multiboot_info* bootinfo){
 	int size = bootinfo->m_mmap_length/24;
 
 	// get memory size in KB
-	u32 memSize = 1024 + bootinfo->m_memoryLo + bootinfo->m_memoryHi*64;
-
+	u32 memSize = 1024 + bootinfo->m_memoryLo + (bootinfo->m_memoryHi * 64);
+	memSize *=  1024;
+	
 	pr_debug("KERNEL", "Kernel ends at: %x\n", (u32)&kernel_end);
     pr_debug("KERNEL", "Bitmap starts at: %x\n", bitmap_addr);
 

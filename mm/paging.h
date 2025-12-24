@@ -17,6 +17,8 @@ typedef u32 virtual_addr;
 
 #define PAGE_SIZE 4096
 
+#define P2V(addr) ((u32)((addr) + 0xC0000000))
+#define V2P(addr) ((u32)(addr) - 0xC0000000)
 
 // page table
 struct ptable {
