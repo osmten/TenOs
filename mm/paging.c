@@ -6,6 +6,10 @@ struct pdirectory* _cur_directory = 0;
 // current page directory base register
 u32 _cur_pdbr = 0;
 
+// kernel page directory
+struct pdirectory* kernel_directory = NULL;
+u32 kernel_directory_physical = 0;
+
 inline pt_entry* vmmngr_ptable_lookup_entry(struct ptable* p,virtual_addr addr) {
 	if (p)
 		return &p->m_entries[PAGE_TABLE_INDEX(addr)];
@@ -20,17 +24,14 @@ inline pd_entry* vmmngr_pdirectory_lookup_entry(struct pdirectory* p, virtual_ad
 	return 0;
 }
 
-inline u32 vmmngr_switch_pdirectory(struct pdirectory* dir) {
+inline u32 vmmngr_switch_pdirectory(u32 dir_phys) {
 
-	if (!dir)
-		return 0;
-
-	_cur_directory = dir;
-   _cur_pdbr = (u32)&dir->m_entries;
-
-	load_PDBR(_cur_pdbr);
-
-	return 1;
+    if (!dir_phys)
+        return 0;
+    
+    _cur_pdbr = dir_phys;
+    load_PDBR(_cur_pdbr);
+    return 1;
 }
 
 void vmmngr_flush_tlb_entry(virtual_addr addr) {
@@ -47,18 +48,17 @@ struct pdirectory* vmmngr_get_directory() {
 }
 
 u32* vmmngr_alloc_page() {
+    // Allocate a free physical frame
+    u32 phys = (u32)alloc_memory_block();
+    if (!phys)
+        return 0;
 
-	// allocate a free physical frame
-	void* p = alloc_memory_block();
-   void *virt = p;
-
-	if (!p)
-		return 0;
-
-   vmmngr_map_page(p, virt);
-
-	return virt;
+    void* virt = P2V(phys);
+    vmmngr_map_page((void*)phys, virt);
+    
+    return (u32*)virt;
 }
+
 
 void vmmngr_free_page(pt_entry* e) {
 
@@ -75,94 +75,105 @@ void vmmngr_free_page(pt_entry* e) {
 
 void vmmngr_map_page(void* phys, void* virt) {
 
-   if (!phys || !virt)
-      return;
+    if (!phys || !virt)
+        return;
+    
+    struct pdirectory* pageDirectory = vmmngr_get_directory();
+    pd_entry* e = &pageDirectory->m_entries[PAGE_DIRECTORY_INDEX((u32)virt)];
+    
+    if (!(*e & I86_PTE_PRESENT)) {
+        u32 table_phys = (u32)alloc_memory_block();
+        struct ptable* table = (struct ptable*)P2V(table_phys);  // Convert to virtual!
+        
+        if (!table)
+            return;
+        
+        memset((u8*)table, 0, sizeof(struct ptable));
+        
+        pd_entry_set_frame(e, table_phys);
+        pd_entry_add_attrib(e, I86_PDE_PRESENT);
+        pd_entry_add_attrib(e, I86_PDE_WRITABLE);
+        pd_entry_add_attrib(e, I86_PDE_USER);
+    }
+    
+    u32 table_phys = PAGE_GET_PHYSICAL_ADDRESS(e);
+    
+    struct ptable* table = (struct ptable*)P2V(table_phys);
+    
+    pt_entry* page = &table->m_entries[PAGE_TABLE_INDEX((u32)virt)];
+    pt_entry_set_frame(page, (u32)phys);
+    pt_entry_add_attrib(page, I86_PTE_PRESENT);
+    pt_entry_add_attrib(page, I86_PTE_WRITABLE);
+    pt_entry_add_attrib(page, I86_PTE_USER);
+}
 
-   struct pdirectory* pageDirectory = vmmngr_get_directory();
+void vmm_map_page_early(struct pdirectory *dir, u32 virt, 
+                       u32 phys, u32 flags) 
+{
+   u32 pd_index = PAGE_DIRECTORY_INDEX(virt);
+   u32 pt_index = PAGE_TABLE_INDEX(virt);
+   
+   pd_entry* e = &dir->m_entries[pd_index];
 
-   pd_entry* e = &pageDirectory->m_entries[PAGE_DIRECTORY_INDEX((u32)virt)];
-
-   if (!(*e & I86_PTE_PRESENT)) {
-
-      // page table not present, allocate it
+   if (!(*e & I86_PDE_PRESENT)) {
       struct ptable* table = (struct ptable*)alloc_memory_block();
 
       if (!table)
          return;
 
-      // clear page table
       memset((u8*)table, 0, sizeof(struct ptable));
 
-      // create a new entry
-      pd_entry* entry =
-         &pageDirectory->m_entries[PAGE_DIRECTORY_INDEX((u32)virt)];
-
-      // map in the table (Can also just do *entry |= 3) to enable these bits
-      pd_entry_add_attrib(entry, I86_PDE_PRESENT);
-      pd_entry_add_attrib(entry, I86_PDE_WRITABLE);
-      pd_entry_add_attrib(entry, I86_PDE_USER);
-      pd_entry_set_frame(entry, (u32)table);
+      *e = (u32)table | flags;
    }
 
-   struct ptable* table = (struct ptable*)PAGE_GET_PHYSICAL_ADDRESS(e);
+   u32 table_phys = PAGE_GET_PHYSICAL_ADDRESS(e);
+   struct ptable* table = (struct ptable*)table_phys;
 
-   pt_entry* page = &table->m_entries[PAGE_TABLE_INDEX((u32)virt)];
-
-   // map it in (Can also do (*page |= 3 to enable..)
-   pt_entry_set_frame( page, (u32) phys);
-   pt_entry_add_attrib( page, I86_PTE_PRESENT);
-   pt_entry_add_attrib(page, I86_PTE_WRITABLE);
-   pt_entry_add_attrib(page, I86_PTE_USER);  
+   pt_entry* page = &table->m_entries[pt_index];
+   pt_entry_set_frame(page, phys);
+   *page |= flags;
 }
 
-void vmmngr_initialize() {
+void vmmngr_initialize(u32 total_memory) 
+{
+    pr_info("PAGING","=== VMM INITIALIZATION START ===\n");
+    pr_debug("PAGING","VMM: total_memory = 0x%x (%u MB)\n",
+            total_memory, total_memory / (1024*1024));
+    
+    kernel_directory_physical = (u32)alloc_memory_block();
+    
+    pr_info("VMM", "Kernel Directory Physical Address is at %x\n", kernel_directory_physical);
 
-   struct ptable* table[5];
-   u32 frame = 0, virt = 0, page_directory_addr = 0;
-   
-   for (int i = 0; i < 5; i++)
-   {
-      table[i] = (struct ptable*)alloc_memory_block();
-      memset((u8*)table[i], 0, sizeof (struct ptable)); // clear page table
-   }
-   
-   // Idenitity mapped
-   int count  = 0;
-   for (int i = 0; i < 5; i++)
-   {
-      for (int j=0; j<1024; j++) {
-         // create a new page
-         pt_entry page = 0;
-         pt_entry_add_attrib(&page, I86_PTE_PRESENT);
-         pt_entry_add_attrib(&page, I86_PTE_USER);
-         pt_entry_add_attrib(&page, I86_PTE_WRITABLE);
-         pt_entry_set_frame(&page, frame);
+    if (!kernel_directory_physical) {
+        pr_err("PAGING","Failed to allocate kernel page directory!\n");
+        return;
+    }
+        
+    kernel_directory = (struct pdirectory*)kernel_directory_physical;
+    memset(kernel_directory, 0, sizeof(struct pdirectory));
+    
+    if (total_memory > 0x40000000) {
+        pr_warn("VMM", "Memory > 1GB, capping at 1GB\n");
+        total_memory = 0x40000000;
+    }
+    
+    pr_info("VMM", "Identity Mapping first 4MB\n");
+    for (u32 phys = 0; phys < 0x400000; phys += PAGE_SIZE) {
+        vmm_map_page_early(kernel_directory, phys, phys,
+                          I86_PTE_PRESENT | I86_PTE_WRITABLE | I86_PDE_USER);
+    }
+    
+    for (u32 phys = 0; phys < total_memory; phys += PAGE_SIZE) {
+        u32 virt = 0xC0000000 + phys;        
+        vmm_map_page_early(kernel_directory, virt, phys, 
+                          I86_PTE_PRESENT | I86_PTE_WRITABLE | I86_PDE_USER);
+    }
+    
+    vmmngr_switch_pdirectory(kernel_directory_physical);
+    pmmngr_paging_enable(1);
 
-         table[i]->m_entries[j] = page;
-         frame+=4096;
-      }
-   }
-
-   struct pdirectory* dir = (struct pdirectory*)alloc_memory_block();
-
-   if (!dir)
-      return;
-
-   memset((u8*)dir, 0, sizeof (struct pdirectory));
-
-   for (int i = 0; i < 5; i++)
-   {
-      // get first entry in dir table and set it up to point to our table
-      pd_entry* entry = &dir->m_entries[PAGE_DIRECTORY_INDEX(page_directory_addr)];
-      pd_entry_add_attrib(entry, I86_PDE_PRESENT);
-      pd_entry_add_attrib(entry, I86_PDE_USER);
-      pd_entry_add_attrib(entry, I86_PDE_WRITABLE);
-      pd_entry_set_frame(entry, (u32)table[i]);
-      page_directory_addr += 4194304; //incrementing 4MB
-   }
-
-   vmmngr_switch_pdirectory(dir);
-
-   pmmngr_paging_enable(1);
-
+    _cur_directory = (struct pdirectory*)P2V(kernel_directory_physical);
+    kernel_directory = _cur_directory;
+    
+    pr_info("PAGING","=== VMM INITIALIZATION COMPLETE ===\n");
 }
