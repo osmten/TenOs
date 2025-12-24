@@ -53,10 +53,10 @@ void main(struct multiboot_info* bootinfo){
 	vmmngr_initialize(memSize);	
 
 	// Allocate user stack
-    // u32 user_stack = (u32)vmmngr_alloc_page() + 0x1000;
+    u32 user_stack = (u32)vmmngr_alloc_page() + 0x1000;
 
-	// tss_init(&_stack_top);
+	tss_init(&_stack_top);
 
-	// jump_usermode(user_stack);
+	jump_usermode(user_stack);
 
 }

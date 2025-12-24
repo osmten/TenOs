@@ -153,8 +153,11 @@ void vmmngr_map_page(void* phys, void* virt) {
     
     struct pdirectory* pageDirectory = vmmngr_get_directory();
     pd_entry* e = &pageDirectory->m_entries[PAGE_DIRECTORY_INDEX((u32)virt)];
+
+    printk("Phys is %x, virt is %x\n", phys, virt);
     
     if (!(*e & I86_PTE_PRESENT)) {
+        printk("Not mapped\n");
         // Allocate page table (returns physical address)
         u32 table_phys = (u32)alloc_memory_block();
         struct ptable* table = (struct ptable*)P2V(table_phys);  // Convert to virtual!
@@ -274,6 +277,7 @@ void vmm_map_page_early(struct pdirectory *dir, u32 virt,
 void vmmngr_initialize(u32 total_memory) 
 {
    int count = 0;
+   total_memory *= 1024;
     printk("=== VMM INITIALIZATION START ===\n");
     printk("VMM: total_memory = 0x%x (%u MB)\n",
             total_memory, total_memory / (1024*1024));
@@ -307,6 +311,14 @@ void vmmngr_initialize(u32 total_memory)
     // Step 4: Map all physical RAM to 0xC0000000+
     printk("VMM: Starting mapping loop...\n");
     u32 pages_mapped = 0;
+
+    printk("VMM: Identity mapping first 4MB...\n");
+    for (u32 phys = 0; phys < 0x400000; phys += PAGE_SIZE) {
+        vmm_map_page_early(kernel_directory, phys, phys,  // virt = phys
+                          I86_PTE_PRESENT | I86_PTE_WRITABLE | I86_PDE_USER);
+    }
+    printk("VMM: Identity mapping complete\n");
+    
     
     for (u32 phys = 0; phys < total_memory; phys += PAGE_SIZE)
     {
@@ -319,7 +331,7 @@ void vmmngr_initialize(u32 total_memory)
         }
         
         vmm_map_page_early(kernel_directory, virt, phys, 
-                          I86_PTE_PRESENT | I86_PTE_WRITABLE);
+                          I86_PTE_PRESENT | I86_PTE_WRITABLE | I86_PDE_USER);
         pages_mapped++;
     }
     
@@ -349,18 +361,18 @@ void vmmngr_initialize(u32 total_memory)
     printk("VMM: CR3 = 0x%x (should be 0x%x)\n", cr3_value, kernel_directory_physical);
     
     // Step 8: Enable paging
-   //  printk("VMM: Enabling paging...\n");
-   //  pmmngr_paging_enable(1);
-    
+    printk("VMM: Enabling paging...\n");
+    pmmngr_paging_enable(1);
+
     // Step 9: Verify paging is enabled
-   //  u32 cr0_value;
-   //  asm volatile("mov %%cr0, %0" : "=r"(cr0_value));
-   //  printk("VMM: CR0 = 0x%x (PG bit = %d)\n", cr0_value, !!(cr0_value & 0x80000000));
+    u32 cr0_value;
+    asm volatile("mov %%cr0, %0" : "=r"(cr0_value));
+    printk("VMM: CR0 = 0x%x (PG bit = %d)\n", cr0_value, !!(cr0_value & 0x80000000));
     
-   //  if (!(cr0_value & 0x80000000)) {
-   //      printk("ERROR: Paging not enabled!\n");
-   //      return;
-   //  }
+    if (!(cr0_value & 0x80000000)) {
+        printk("ERROR: Paging not enabled!\n");
+        return;
+    }
     
     printk("VMM: Paging enabled successfully!\n");
     
