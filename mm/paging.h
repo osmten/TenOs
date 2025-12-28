@@ -1,5 +1,5 @@
 #ifndef _MMNGR_VIRT_H
-#define MMNGR_VIRT_H
+#define _MMNGR_VIRT_H	
 
 #include "memory.h"
 #include "vmmngr_pte.h"
@@ -59,5 +59,8 @@ pt_entry* vmmngr_ptable_lookup_entry(struct ptable* p,virtual_addr addr);
 
 // get directory entry from directory table
 pd_entry* vmmngr_pdirectory_lookup_entry(struct pdirectory* p, virtual_addr addr);
+
+// unmap a specific page
+void vmmngr_unmap_page(void *virt);
 
 #endif

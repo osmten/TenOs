@@ -72,6 +72,17 @@ void vmmngr_free_page(pt_entry* e) {
 
 	pt_entry_del_attrib(e, I86_PTE_PRESENT);
 }
+void vmmngr_unmap_page(void *virt)
+{
+    struct pdirectory* pageDirectory = vmmngr_get_directory();
+    pd_entry* e = &pageDirectory->m_entries[PAGE_DIRECTORY_INDEX((u32)virt)];
+    
+    u32 table_phys = PAGE_GET_PHYSICAL_ADDRESS(e);
+    struct ptable* table = (struct ptable*)P2V(table_phys);
+    pt_entry* page = &table->m_entries[PAGE_TABLE_INDEX((u32)virt)];
+
+    pt_entry_del_attrib(page, I86_PTE_PRESENT);
+}
 
 void vmmngr_map_page(void* phys, void* virt) {
 
@@ -106,6 +117,40 @@ void vmmngr_map_page(void* phys, void* virt) {
     pt_entry_add_attrib(page, I86_PTE_WRITABLE);
     pt_entry_add_attrib(page, I86_PTE_USER);
 }
+
+void vmm_map_page_late(struct pdirectory *dir, u32 virt, 
+                       u32 phys, u32 flags) 
+{
+   u32 pd_index = PAGE_DIRECTORY_INDEX(virt);
+   u32 pt_index = PAGE_TABLE_INDEX(virt);
+   
+   pd_entry* e = &dir->m_entries[pd_index];
+   
+   if (!(*e & I86_PDE_PRESENT)) {
+      // Allocate page table
+      u32 table_phys = (u32)alloc_memory_block();
+      if (!table_phys)
+         return;
+      
+      // Access via higher half mapping
+      struct ptable* table = (struct ptable*)P2V(table_phys);
+      memset((u8*)table, 0, sizeof(struct ptable));
+      
+      // Store physical address in PD entry
+      *e = table_phys | flags;
+   }
+   
+   // Get page table physical address
+   u32 table_phys = PAGE_GET_PHYSICAL_ADDRESS(e);
+   
+   // Access via higher half mapping
+   struct ptable* table = (struct ptable*)P2V(table_phys);
+   
+   pt_entry* page = &table->m_entries[pt_index];
+   pt_entry_set_frame(page, phys);
+   *page |= flags;
+}
+
 
 void vmm_map_page_early(struct pdirectory *dir, u32 virt, 
                        u32 phys, u32 flags) 
