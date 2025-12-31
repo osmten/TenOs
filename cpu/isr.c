@@ -114,7 +114,8 @@ char *exception_messages[] = {
 void isr_handler(registers_t *r) {
     printk("Received interrupt: %d -> %s\n", r->int_no, exception_messages[r->int_no]);
     /* Todo: Remove this. Add proper handling */
-    asm volatile("hlt");
+    while(1)
+        asm volatile("hlt");
 }
 
 void register_interrupt_handler(u8 n, isr_t handler) {

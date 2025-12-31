@@ -2,7 +2,8 @@
 [org 0x500]
 
 KERNEL_OFFSET equ 0x10000
-KERNEL_JUMP   equ 0x100000
+;KERNEL_JUMP   equ 0x100000
+KERNEL_JUMP   equ 0xC0100000
 
 struc multiboot_info
 	.flags				resd	1
@@ -105,6 +106,7 @@ stage2_main:
 %include "boot/32bit_print.asm"
 %include "boot/switch_pm.asm"
 %include "boot/memory.asm"
+%include "boot/paging.asm"
 
 [bits 16]
 load_kernel:
@@ -221,6 +223,9 @@ BEGIN_PM:
 
     mov eax, 0x2BADB002
     mov ebx, boot_info
+
+    call setup_paging
+
     push boot_info
     call KERNEL_JUMP
     jmp $

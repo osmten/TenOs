@@ -83,4 +83,4 @@ clean:
 	rm -rf *.bin *.dis *.o *.elf hda.img kernel.map
 	rm -rf $(KERNEL_DIR)/*.o $(BOOT_DIR)/*.bin $(BOOT_DIR)/*.o
 	rm -rf $(DRIVERS_DIR)/*.o $(CPU_DIR)/*.o $(LIB_DIR)/*.o
-	rm -rf $(MM_DIR)/*.o $(FS_DIR)/*.o
+	rm -rf $(MM_DIR)/*.o $(FS_DIR)/*.o $(USR_DIR)/*.o
