@@ -14,6 +14,7 @@
 *.iso
 *.dmg
 *.map
+*.txt
 
 # Build directories
 build/

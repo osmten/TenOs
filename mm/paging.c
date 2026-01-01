@@ -84,7 +84,6 @@ void vmmngr_map_page(void* phys, void* virt) {
     if (!(*e & I86_PTE_PRESENT)) {
         u32 table_phys = (u32)alloc_memory_block();
         struct ptable* table = (struct ptable*)P2V(table_phys);  // Convert to virtual!
-        printk("MAP page is %x \n", table_phys);
         if (!table)
             return;
         
@@ -105,33 +104,6 @@ void vmmngr_map_page(void* phys, void* virt) {
     pt_entry_add_attrib(page, I86_PTE_PRESENT);
     pt_entry_add_attrib(page, I86_PTE_WRITABLE);
     pt_entry_add_attrib(page, I86_PTE_USER);
-}
-
-void vmm_map_page_early(struct pdirectory *dir, u32 virt, 
-                       u32 phys, u32 flags) 
-{
-   u32 pd_index = PAGE_DIRECTORY_INDEX(virt);
-   u32 pt_index = PAGE_TABLE_INDEX(virt);
-   
-   pd_entry* e = &dir->m_entries[pd_index];
-
-   if (!(*e & I86_PDE_PRESENT)) {
-      struct ptable* table = (struct ptable*)alloc_memory_block();
-
-      if (!table)
-         return;
-
-      memset((u8*)table, 0, sizeof(struct ptable));
-
-      *e = (u32)table | flags;
-   }
-
-   u32 table_phys = PAGE_GET_PHYSICAL_ADDRESS(e);
-   struct ptable* table = (struct ptable*)table_phys;
-
-   pt_entry* page = &table->m_entries[pt_index];
-   pt_entry_set_frame(page, phys);
-   *page |= flags;
 }
 
 void vmmngr_initialize(u32 total_memory) {
@@ -157,24 +129,14 @@ void vmmngr_initialize(u32 total_memory) {
         u32 virt = 0xC0000000 + phys;
         
         // Check if already mapped
-        u32 pd_idx = (virt >> 22) & 0x3FF;
+        u32 pd_idx = PAGE_DIRECTORY_INDEX(virt);
         if (kernel_directory->m_entries[pd_idx] & I86_PDE_PRESENT) {
             continue;  // Already mapped by boot
         }
         
-        // vmm_map_page_early(kernel_directory, virt, phys,
-        //                   I86_PTE_PRESENT | I86_PTE_WRITABLE | I86_PTE_USER);
         vmmngr_map_page(phys, virt);
     }
     
-    // Optionally remove identity mapping
-    // (Only do this if you're sure kernel doesn't use low addresses)
-    
-    // pr_info("VMM", "Removing identity mapping...\n");
-    // for (int i = 0; i < 4; i++) {
-    //     kernel_directory->m_entries[i] = 0;
-    // }
-
     //   __asm__ volatile(
     //     "mov %%cr3, %%eax\n\t"
     //     "mov %%eax, %%cr3"
@@ -188,89 +150,3 @@ void vmmngr_initialize(u32 total_memory) {
     
     pr_info("PAGING","=== VMM INITIALIZATION COMPLETE ===\n");
 }
-
-// void vmmngr_initialize(u32 total_memory) 
-// {
-//     pr_info("PAGING","=== VMM INITIALIZATION START ===\n");
-//     pr_debug("PAGING","VMM: total_memory = 0x%x (%u MB)\n",
-//             total_memory, total_memory / (1024*1024));
-    
-//     kernel_directory_physical = (u32)alloc_memory_block();
-    
-//     pr_info("VMM", "Kernel Directory Physical Address is at %x\n", kernel_directory_physical);
-
-//     if (!kernel_directory_physical) {
-//         pr_err("PAGING","Failed to allocate kernel page directory!\n");
-//         return;
-//     }
-        
-//     kernel_directory = (struct pdirectory*)kernel_directory_physical;
-//     memset(kernel_directory, 0, sizeof(struct pdirectory));
-    
-//     if (total_memory > 0x40000000) {
-//         pr_warn("VMM", "Memory > 1GB, capping at 1GB\n");
-//         total_memory = 0x40000000;
-//     }
-    
-//     pr_info("VMM", "Identity Mapping first 4MB\n");
-//     for (u32 phys = 0; phys < 0x400000; phys += PAGE_SIZE) {
-//         vmm_map_page_early(kernel_directory, phys, phys,
-//                           I86_PTE_PRESENT | I86_PTE_WRITABLE | I86_PDE_USER);
-//     }
-    
-//     for (u32 phys = 0; phys < total_memory; phys += PAGE_SIZE) {
-//         u32 virt = 0xC0000000 + phys;        
-//         vmm_map_page_early(kernel_directory, virt, phys, 
-//                           I86_PTE_PRESENT | I86_PTE_WRITABLE | I86_PDE_USER);
-//     }
-    
-//     vmmngr_switch_pdirectory(kernel_directory_physical);
-//     pmmngr_paging_enable(1);
-
-//     _cur_directory = (struct pdirectory*)P2V(kernel_directory_physical);
-//     kernel_directory = _cur_directory;
-    
-//     pr_info("PAGING","=== VMM INITIALIZATION COMPLETE ===\n");
-// }
-
-// void vmmngr_initialize(u32 total_memory) 
-// {
-//     pr_info("PAGING","=== VMM INITIALIZATION START ===\n");
-    
-//     // Paging is already enabled by boot/paging.asm!
-//     // We're already at 0xC0... addresses!
-    
-//     pr_info("VMM", "Already in higher-half mode\n");
-    
-//     // Now allocate proper kernel page directory
-//     kernel_directory_physical = (u32)alloc_memory_block();
-//     kernel_directory = (struct pdirectory*)P2V(kernel_directory_physical);
-
-//     // vmmngr_map_page(kernel_directory_physical, kernel_directory);
-//     pr_info("VMM", "New kernel directory: phys=0x%x, virt=%p\n",
-//             kernel_directory_physical, kernel_directory);
-    
-//     memset(kernel_directory, 0, sizeof(struct pdirectory));
-    
-//     if (total_memory > 0x40000000) {
-//         pr_warn("VMM", "Memory > 1GB, capping at 1GB\n");
-//         total_memory = 0x40000000;
-//     }
-    
-//     // Map all physical memory to higher half (no identity mapping!)
-//     pr_info("VMM", "Mapping %u MB to higher half\n", total_memory / (1024*1024));
-//     for (u32 phys = 0; phys < total_memory; phys += PAGE_SIZE) {
-//         u32 virt = 0xC0000000 + phys;
-//         vmm_map_page_early(kernel_directory, virt, phys, 
-//                           I86_PTE_PRESENT | I86_PTE_WRITABLE);
-//     }
-    
-//     // Switch to our new page directory
-//     pr_info("VMM", "Switching to new page directory\n");
-//     vmmngr_switch_pdirectory(kernel_directory_physical);
-    
-//     _cur_directory = kernel_directory;
-//     _cur_pdbr = kernel_directory_physical;
-    
-//     pr_info("PAGING","=== VMM INITIALIZATION COMPLETE ===\n");
-// }
