@@ -120,6 +120,7 @@ void vmmngr_initialize(u32 total_memory) {
             kernel_directory_physical, kernel_directory);
     
     if (total_memory > 0x40000000) {
+        pr_warn("VMM", "Memory > 1GB, capping at 1GB\n");
         total_memory = 0x40000000;
     }
     
@@ -136,14 +137,16 @@ void vmmngr_initialize(u32 total_memory) {
         
         vmmngr_map_page(phys, virt);
     }
-    
-    //   __asm__ volatile(
-    //     "mov %%cr3, %%eax\n\t"
-    //     "mov %%eax, %%cr3"
-    //     :
-    //     :
-    //     : "eax", "memory"
-    // );
+
+    /* Remove identity mapping done at boot time */
+    pd_entry* e = &kernel_directory->m_entries[0];
+    u32 table_phys = PAGE_GET_PHYSICAL_ADDRESS(e);
+    struct ptable* table = (struct ptable*)P2V(table_phys);
+
+    for (int i = 0; i < 1024; i++)
+    {
+        table->m_entries[i] = 0;
+    }
 
     _cur_directory = kernel_directory;
     _cur_pdbr = kernel_directory_physical;

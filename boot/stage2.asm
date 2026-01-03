@@ -2,7 +2,6 @@
 [org 0x500]
 
 KERNEL_OFFSET equ 0x10000
-;KERNEL_JUMP   equ 0x100000
 KERNEL_JUMP   equ 0xC0100000
 
 struc multiboot_info
