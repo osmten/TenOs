@@ -60,24 +60,20 @@ setup_paging:
     or eax, 0x80000000              ; Enable paging bit
     mov cr0, eax
     
-    ; *** IMPORTANT: Paging is now ON! ***
-    ; Identity mapping allows us to continue executing
-    
     ;------------------------------------------
     ; Map 3GB to physical 1MB (kernel location)
     ; This happens AFTER paging is enabled!
     ;------------------------------------------
     mov eax, PAGE_TABLE_768         ; Point to 768th table
-    mov ebx, 0x0 | PRIV        ; Physical 1MB
+    mov ebx, 0x0 | PRIV
     mov ecx, PAGE_TABLE_ENTRIES
     
 .loop2:
-    mov dword [eax], ebx            ; Map page
+    mov dword [eax], ebx
     add eax, 4
     add ebx, 4096
     loop .loop2
     
-    ; Flush TLB to ensure new mappings are active
     mov eax, cr3
     mov cr3, eax
     
