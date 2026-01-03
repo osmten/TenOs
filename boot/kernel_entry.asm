@@ -4,8 +4,9 @@
 [extern __bss_end]
 [extern __bss_start]
 
+global kernel_entry
+
 kernel_entry:
-    ; Verify symbols are valid
     mov eax, _stack_top
     cmp eax, 0
     je .bad_symbols
@@ -23,8 +24,6 @@ kernel_entry:
     sub ecx, edi
     xor eax, eax
     rep stosb
-
-    ; Continue boot
 
     call main
     jmp $

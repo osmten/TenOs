@@ -1,7 +1,7 @@
 #include "fs.h"
 
 static FAT12_MountInfo mount_info;
-static u8 sector_buffer[512];
+static u8 sector_buffer[512] = {0};
 
 // Initialize FAT12 filesystem
 int fat12_init(void) {
@@ -28,7 +28,7 @@ int fat12_init(void) {
     
     mount_info.data_start = mount_info.root_start + mount_info.root_size;
     
-    mount_info.fat_buffer =  (u8*)alloc_memory_block();
+    mount_info.fat_buffer =  (u8*)vmmngr_alloc_page();
     if (!mount_info.fat_buffer) {
         return -1;
     }
@@ -114,7 +114,7 @@ FAT12_File* fat12_open(const char *filename) {
 
             if (memcmp(entries[i].filename, dos_name, 11) == 0) {
                 pr_debug("FS", "FILE FOUND\n");
-                FAT12_File *file = (FAT12_File*)alloc_memory_block();
+                FAT12_File *file = (FAT12_File*)vmmngr_alloc_page();
                 if (!file) return 0;
     
                 memcpy(file->name, (char *)filename, 256);
@@ -130,7 +130,7 @@ FAT12_File* fat12_open(const char *filename) {
         }
     }
     
-    return 0;
+    return NULL;
 }
 
 // Get next cluster from FAT12
@@ -295,8 +295,13 @@ int fat12_create(const char *filename, u32 size) {
 
 // Write to file
 int fat12_write(FAT12_File *file, const u8 *buffer, u32 size) {
-    if (!file) return -1;
     
+    if (!file) 
+    {
+        pr_err("FS", "No File Found \n");
+        return -1;
+    }
+
     u32 bytes_written = 0;
     file->current_cluster = file->first_cluster;
     

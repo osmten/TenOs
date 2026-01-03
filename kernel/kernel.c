@@ -14,7 +14,6 @@ void main(struct multiboot_info* bootinfo){
     isr_install();
     init_timer(50);
     init_keyboard();
-	fat12_init();
 	printk_init();
 
     asm volatile("sti");
@@ -51,7 +50,8 @@ void main(struct multiboot_info* bootinfo){
 
 	printk("Kernel stack top %x\n ", &_stack_top);
 	
-	vmmngr_initialize(memSize);	
+	vmmngr_initialize(memSize);
+	fat12_init();
 
 	// Allocate user stack
     u32 user_stack = (u32)vmmngr_alloc_page() + 0x1000;
