@@ -54,7 +54,7 @@ void main(struct multiboot_info* bootinfo){
 	fat12_init();
 
 	// // Allocate user stack
-    // u32 user_stack = (u32)vmmngr_alloc_page() + 0x1000;
+    u32 user_stack = (u32)vmmngr_alloc_page() + 0x1000;
 
 	tss_init(&_stack_top);
 
