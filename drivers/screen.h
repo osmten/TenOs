@@ -4,7 +4,10 @@
 #include "ports.h"
 #include <lib/lib.h>
 
-#define VIDEO_ADDRESS 0xb8000
+/* Actual VIDEO_ADDRESS is at 0xb8000, but since paging is on
+ * And 0 - 1GB are mapped to 3GB. So the address below is used. */
+
+#define VIDEO_ADDRESS 0xC00B8000
 #define MAX_ROWS 25
 #define MAX_COLS 80
 #define WHITE_ON_BLACK 0x0f

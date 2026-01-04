@@ -107,32 +107,32 @@ void vmmngr_map_page(void* phys, void* virt) {
 }
 
 void vmmngr_initialize(u32 total_memory) {
-    pr_info("PAGING","=== VMM INITIALIZATION START ===\n");
+    pr_info("PAGING","=== VMM INITIALIZATION START ===");
 
     u32 boot_pd_phys;
     __asm__ volatile("mov %%cr3, %0" : "=r"(boot_pd_phys));
     struct pdirectory* boot_pd = (struct pdirectory*)P2V(boot_pd_phys);
 
-    pr_info("VMM", "Boot PD: phys=0x%x, virt=0x%x\n", boot_pd_phys, (u32)boot_pd);
+    pr_info("VMM", "Boot PD: phys=0x%x, virt=0x%x", boot_pd_phys, (u32)boot_pd);
 
     if (total_memory > 0x40000000) {
-        pr_warn("VMM", "Memory > 1GB, capping at 1GB\n");
+        pr_warn("VMM", "Memory > 1GB, capping at 1GB");
         total_memory = 0x40000000;
     }
 
     u32 new_pd_phys = (u32)alloc_memory_block();
     if (!new_pd_phys) {
-        pr_err("VMM", "Failed to allocate new page directory!\n");
+        pr_err("VMM", "Failed to allocate new page directory!");
         return;
     }
 
     struct pdirectory* new_pd = (struct pdirectory*)P2V(new_pd_phys);
     memset((u8*)new_pd, 0, sizeof(struct pdirectory));
 
-    pr_info("VMM", "Allocated new PD: phys=0x%x, virt=0x%x\n",
+    pr_info("VMM", "Allocated new PD: phys=0x%x, virt=0x%x",
             new_pd_phys, (u32)new_pd);
 
-    pr_info("VMM", "Copying boot mappings to new PD...\n");
+    pr_info("VMM", "Copying boot mappings to new PD...");
 
     for (int i = 0; i < 1024; i++) {
         pd_entry* boot_pde = &boot_pd->m_entries[i];
@@ -157,11 +157,11 @@ void vmmngr_initialize(u32 total_memory) {
         pd_entry_add_attrib(&new_pd->m_entries[i], I86_PDE_WRITABLE);
         pd_entry_add_attrib(&new_pd->m_entries[i], I86_PDE_USER);
 
-        pr_debug("VMM", "Copied PD[%d]: old_table=0x%x, new_table=0x%x\n",
+        pr_debug("VMM", "Copied PD[%d]: old_table=0x%x, new_table=0x%x",
                 i, old_table_phys, new_table_phys);
     }
 
-    pr_info("VMM", "Switching to new page directory...\n");
+    pr_info("VMM", "Switching to new page directory...");
 
     kernel_directory = new_pd;
     kernel_directory_physical = new_pd_phys;
@@ -170,9 +170,9 @@ void vmmngr_initialize(u32 total_memory) {
 
     vmmngr_switch_pdirectory(new_pd_phys);
 
-    pr_info("VMM", "Successfully switched to new PD!\n");
+    pr_info("VMM", "Successfully switched to new PD!");
 
-    pr_info("VMM", "Extending memory mappings...\n");
+    pr_info("VMM", "Extending memory mappings...");
 
     for (u32 phys = 0x400000; phys < total_memory; phys += PAGE_SIZE) {
         u32 virt = 0xC0000000 + phys;
@@ -192,7 +192,7 @@ void vmmngr_initialize(u32 total_memory) {
         vmmngr_map_page((void*)phys, (void*)virt);
     }
 
-    pr_info("VMM", "Removing identity mapping...\n");
+    pr_info("VMM", "Removing identity mapping...");
 
     pd_entry* identity_pde = &kernel_directory->m_entries[0];
     if (*identity_pde & I86_PDE_PRESENT) {
@@ -207,21 +207,22 @@ void vmmngr_initialize(u32 total_memory) {
         // Clear PDE
         *identity_pde = 0;
 
-        // Flush TLB for identity mapped region
-        // for (u32 addr = 0; addr < 0x400000; addr += PAGE_SIZE) {
-        //     vmmngr_flush_tlb_entry(addr);
-        // }
+        /**
+         * Flush TLB for identity mapped region. Reading and writing back cr3 flushes TLB,
+         * Other option was to call invlpg instruction on 0 to 4MB address identity mapped.
+         * This looked clean and simple
+         **/
 
-        // __asm__ volatile(
-        // "mov %%cr3, %%eax\n"   // Read CR3
-        // "mov %%eax, %%cr3\n"   // Write it back
-        // ::: "eax"
-        // );
+        __asm__ volatile(
+        "mov %%cr3, %%eax\n"   // Read CR3
+        "mov %%eax, %%cr3\n"   // Write it back
+        ::: "eax"
+        );
 
-        pr_info("VMM", "Identity mapping removed\n");
+        pr_info("VMM", "Identity mapping removed");
     }
 
-    pr_info("PAGING","=== VMM INITIALIZATION COMPLETE ===\n");
-    pr_info("VMM", "Kernel PD at 0x%x (phys: 0x%x)\n", 
+    pr_info("PAGING","=== VMM INITIALIZATION COMPLETE ===");
+    pr_info("VMM", "Kernel PD at 0x%x (phys: 0x%x)", 
             (u32)kernel_directory, kernel_directory_physical);
 }
