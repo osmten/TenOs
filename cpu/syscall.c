@@ -166,6 +166,8 @@ u32 syscall_dispatcher(u32 syscall_num, u32 arg1, u32 arg2, u32 arg3, u32 arg4, 
             printk("[KERNEL] Unknown syscall: %d\n", syscall_num);
             return -1; 
     }
+
+    return 0;
 }
 
 // Syscall 0: Exit

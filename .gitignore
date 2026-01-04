@@ -8,12 +8,14 @@
 *.dll
 *.so
 *.dylib
+*.elf
 
 # Disk images and other binary formats
 *.img
 *.iso
 *.dmg
 *.map
+*.txt
 
 # Build directories
 build/
