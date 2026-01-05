@@ -118,49 +118,122 @@ void vmmngr_map_page(void* phys, void* virt) {
 }
 
 void vmmngr_initialize(u32 total_memory) {
-    pr_info("PAGING","=== VMM INITIALIZATION START ===\n");
-    
-    // Get existing page directory from CR3
-    u32 current_cr3;
-    __asm__ volatile("mov %%cr3, %0" : "=r"(current_cr3));
-    
-    kernel_directory_physical = current_cr3;
-    kernel_directory = (struct pdirectory*)P2V(current_cr3);
-    
-    pr_info("VMM", "Using boot PD: phys=0x%x, virt=%x\n",
-            kernel_directory_physical, kernel_directory);
-    
+    pr_info("PAGING","=== VMM INITIALIZATION START ===");
+
+    u32 boot_pd_phys;
+    __asm__ volatile("mov %%cr3, %0" : "=r"(boot_pd_phys));
+    struct pdirectory* boot_pd = (struct pdirectory*)P2V(boot_pd_phys);
+
+    pr_info("VMM", "Boot PD: phys=0x%x, virt=0x%x", boot_pd_phys, (u32)boot_pd);
+
     if (total_memory > 0x40000000) {
-        pr_warn("VMM", "Memory > 1GB, capping at 1GB\n");
+        pr_warn("VMM", "Memory > 1GB, capping at 1GB");
         total_memory = 0x40000000;
     }
-    
-    // Extend mappings beyond 4MB if needed
-    pr_info("VMM", "Mapping rest of memory...\n");
+
+    u32 new_pd_phys = (u32)alloc_memory_block();
+    if (!new_pd_phys) {
+        pr_err("VMM", "Failed to allocate new page directory!");
+        return;
+    }
+
+    struct pdirectory* new_pd = (struct pdirectory*)P2V(new_pd_phys);
+    memset((u8*)new_pd, 0, sizeof(struct pdirectory));
+
+    pr_info("VMM", "Allocated new PD: phys=0x%x, virt=0x%x",
+            new_pd_phys, (u32)new_pd);
+
+    pr_info("VMM", "Copying boot mappings to new PD...");
+
+    for (int i = 0; i < 1024; i++) {
+        pd_entry* boot_pde = &boot_pd->m_entries[i];
+
+        if (!(*boot_pde & I86_PDE_PRESENT))
+            continue;
+
+        u32 new_table_phys = (u32)alloc_memory_block();
+        struct ptable* new_table = (struct ptable*)P2V(new_table_phys);
+        memset((u8*)new_table, 0, sizeof(struct ptable));
+
+        // Get old table
+        u32 old_table_phys = PAGE_GET_PHYSICAL_ADDRESS(boot_pde);
+        struct ptable* old_table = (struct ptable*)P2V(old_table_phys);
+
+        for (int j = 0; j < 1024; j++) {
+            new_table->m_entries[j] = old_table->m_entries[j];
+        }
+
+        pd_entry_set_frame(&new_pd->m_entries[i], new_table_phys);
+        pd_entry_add_attrib(&new_pd->m_entries[i], I86_PDE_PRESENT);
+        pd_entry_add_attrib(&new_pd->m_entries[i], I86_PDE_WRITABLE);
+        pd_entry_add_attrib(&new_pd->m_entries[i], I86_PDE_USER);
+
+        pr_debug("VMM", "Copied PD[%d]: old_table=0x%x, new_table=0x%x",
+                i, old_table_phys, new_table_phys);
+    }
+
+    pr_info("VMM", "Switching to new page directory...");
+
+    kernel_directory = new_pd;
+    kernel_directory_physical = new_pd_phys;
+    _cur_directory = new_pd;
+    _cur_pdbr = new_pd_phys;
+
+    vmmngr_switch_pdirectory(new_pd_phys);
+
+    pr_info("VMM", "Successfully switched to new PD!");
+
+    pr_info("VMM", "Extending memory mappings...");
+
     for (u32 phys = 0x400000; phys < total_memory; phys += PAGE_SIZE) {
         u32 virt = 0xC0000000 + phys;
-        
-        // Check if already mapped
+
         u32 pd_idx = PAGE_DIRECTORY_INDEX(virt);
-        if (kernel_directory->m_entries[pd_idx] & I86_PDE_PRESENT) {
-            continue;  // Already mapped by boot
+        pd_entry* pde = &kernel_directory->m_entries[pd_idx];
+
+        if (*pde & I86_PDE_PRESENT) {
+            u32 table_phys = PAGE_GET_PHYSICAL_ADDRESS(pde);
+            struct ptable* table = (struct ptable*)P2V(table_phys);
+            u32 pt_idx = PAGE_TABLE_INDEX(virt);
+
+            if (table->m_entries[pt_idx] & I86_PTE_PRESENT)
+                continue;
         }
-        
-        vmmngr_map_page(phys, virt);
+
+        vmmngr_map_page((void*)phys, (void*)virt);
     }
 
-    /* Remove identity mapping done at boot time */
-    pd_entry* e = &kernel_directory->m_entries[0];
-    u32 table_phys = PAGE_GET_PHYSICAL_ADDRESS(e);
-    struct ptable* table = (struct ptable*)P2V(table_phys);
+    pr_info("VMM", "Removing identity mapping...");
 
-    for (int i = 0; i < 1024; i++)
-    {
-        table->m_entries[i] = 0;
+    pd_entry* identity_pde = &kernel_directory->m_entries[0];
+    if (*identity_pde & I86_PDE_PRESENT) {
+        u32 table_phys = PAGE_GET_PHYSICAL_ADDRESS(identity_pde);
+        struct ptable* table = (struct ptable*)P2V(table_phys);
+
+        // Clear all entries
+        for (int i = 0; i < 1024; i++) {
+            table->m_entries[i] = 0;
+        }
+
+        // Clear PDE
+        *identity_pde = 0;
+
+        /**
+         * Flush TLB for identity mapped region. Reading and writing back cr3 flushes TLB,
+         * Other option was to call invlpg instruction on 0 to 4MB address identity mapped.
+         * This looked clean and simple
+         **/
+
+        __asm__ volatile(
+        "mov %%cr3, %%eax\n"   // Read CR3
+        "mov %%eax, %%cr3\n"   // Write it back
+        ::: "eax"
+        );
+
+        pr_info("VMM", "Identity mapping removed");
     }
 
-    _cur_directory = kernel_directory;
-    _cur_pdbr = kernel_directory_physical;
-    
-    pr_info("PAGING","=== VMM INITIALIZATION COMPLETE ===\n");
+    pr_info("PAGING","=== VMM INITIALIZATION COMPLETE ===");
+    pr_info("VMM", "Kernel PD at 0x%x (phys: 0x%x)", 
+            (u32)kernel_directory, kernel_directory_physical);
 }
