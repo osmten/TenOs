@@ -111,11 +111,54 @@ char *exception_messages[] = {
     "Reserved"
 };
 
+// void isr_handler(registers_t *r) {
+//     printk("Received interrupt: %d -> %s\n", r->int_no, exception_messages[r->int_no]);
+//     /* Todo: Remove this. Add proper handling */
+//     while(1)
+//         asm volatile("hlt");
+// }
+
 void isr_handler(registers_t *r) {
+    // Special handling for page fault (interrupt 14)
+    if (r->int_no == 14) {
+        // Read CR2 register (contains faulting address)
+        u32 faulting_address;
+        __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
+        
+        printk("\n========== PAGE FAULT ==========\n");
+        printk("Faulting address: 0x%x\n", faulting_address);
+        printk("Error code: 0x%x\n", r->err_code);
+        
+        // Decode error code
+        printk("  ");
+        if (!(r->err_code & 0x1)) printk("[NOT PRESENT] ");
+        else printk("[PROTECTION] ");
+        
+        if (r->err_code & 0x2) printk("[WRITE] ");
+        else printk("[READ] ");
+        
+        if (r->err_code & 0x4) printk("[USER MODE] ");
+        else printk("[KERNEL MODE] ");
+        
+        if (r->err_code & 0x8) printk("[RESERVED BITS] ");
+        if (r->err_code & 0x10) printk("[INSTRUCTION FETCH] ");
+        
+        printk("\n");
+        printk("EIP: 0x%x\n", r->eip);
+        printk("ESP: 0x%x\n", r->esp);
+        printk("EBP: 0x%x\n", r->ebp);
+        printk("CS: 0x%x, SS: 0x%x\n", r->cs, r->ss);
+        printk("================================\n");
+        
+        while(1) asm volatile("hlt");
+    }
+    
+    // Handle other exceptions
     printk("Received interrupt: %d -> %s\n", r->int_no, exception_messages[r->int_no]);
-    /* Todo: Remove this. Add proper handling */
-    while(1)
-        asm volatile("hlt");
+    printk("  EIP: 0x%x\n", r->eip);
+    printk("  Error code: 0x%x\n", r->err_code);
+    
+    while(1) asm volatile("hlt");
 }
 
 void register_interrupt_handler(u8 n, isr_t handler) {

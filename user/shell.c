@@ -40,7 +40,7 @@ void shell_main() {
             }
             
             // Pass everything else to kernel via syscall
-            int result = sys_exec_command(line);
+            int result = 0; //sys_exec_command(line);
             
             if (result < 0) {
                 print("\nCommand failed or unknown command\n");

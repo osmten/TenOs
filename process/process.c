@@ -821,9 +821,9 @@ struct process *process_create(const char *name, void *code, int code_size) {
     }
     
     // OPTIONAL: Copy identity mapping for first 4MB if needed
-    for (int i = 0; i < 4; i++) {
-        proc_pd->m_entries[i] = kernel_directory->m_entries[i];
-    }
+    // for (int i = 0; i < 4; i++) {
+    //     proc_pd->m_entries[i] = kernel_directory->m_entries[i];
+    // }
     
     printk("  Page directory initialized with kernel mappings\n");
     
@@ -1017,6 +1017,7 @@ struct process *process_create(const char *name, void *code, int code_size) {
  * ============================================================================ */
 
 void process_run(struct process *proc) {
+
     if (!proc) {
         pr_err("PROC", "Cannot run NULL process\n");
         return;
@@ -1062,9 +1063,9 @@ void process_run(struct process *proc) {
     }
     
     // Switch back to kernel PD temporarily
-    u32 kernel_cr3;
-    __asm__ volatile("mov %0, %%cr3" : "=r"(kernel_cr3));
-    __asm__ volatile("mov %0, %%cr3" :: "r"(kernel_cr3) : "memory");
+    // u32 kernel_cr3;
+    // __asm__ volatile("mov %0, %%cr3" : "=r"(kernel_cr3));
+    // __asm__ volatile("mov %0, %%cr3" :: "r"(kernel_cr3) : "memory");
     
     printk("\n========== JUMPING TO USER MODE ==========\n\n");
     

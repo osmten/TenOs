@@ -145,7 +145,70 @@ int process_cmd(const char *buff)
 // Main syscall dispatcher
 u32 syscall_dispatcher(u32 syscall_num, u32 arg1, u32 arg2, u32 arg3, u32 arg4, u32 arg5) {
     // This function runs in RING 0 (kernel mode)
+     u32 ebp;
+    asm volatile("mov %%ebp, %0" : "=r"(ebp));
     
+    u32 *frame = (u32*)ebp;
+    
+    printk("\n========== SYSCALL DEBUG (using EBP) ==========\n");
+    printk("EBP = 0x%x\n", ebp);
+    
+    // printk("\nFunction call frame:\n");
+    // printk("[EBP+0]  = %x (Saved EBP)\n", frame[0]);
+    // printk("[EBP+4]  = %x (Return address)\n", frame[1]);
+    // printk("[EBP+8]  = %x (syscall_num = %u)\n", frame[2], frame[2]);
+    // printk("[EBP+12] = %x (arg1 = %u)\n", frame[3], frame[3]);
+    // printk("[EBP+16] = %x (arg2 = %u)\n", frame[4], frame[4]);
+    // printk("[EBP+20] = %x (arg3 = %u)\n", frame[5], frame[5]);
+    // printk("[EBP+24] = %x (arg4 = %u)\n", frame[6], frame[6]);
+    // printk("[EBP+28] = %x (arg5 = %u)\n", frame[7], frame[7]);
+    
+    // printk("\nSaved registers:\n");
+    // printk("[EBP+32] = 0x%08x (saved EAX)\n", frame[8]);
+    // printk("[EBP+36] = 0x%08x (saved EBX)\n", frame[9]);
+    // printk("[EBP+40] = 0x%08x (saved ECX)\n", frame[10]);
+    // printk("[EBP+44] = 0x%08x (saved EDX)\n", frame[11]);
+    // printk("[EBP+48] = 0x%08x (saved ESI)\n", frame[12]);
+    // printk("[EBP+52] = 0x%08x (saved EDI)\n", frame[13]);
+    
+    printk("\nCPU-pushed values:\n");
+    printk("[EBP+56] = %x (User EIP)\n", frame[14]);
+    printk("[EBP+60] = %x (User CS)\n", frame[15]);
+    printk("[EBP+64] = %x (User EFLAGS)\n", frame[16]);
+    printk("[EBP+68] = %x (User ESP)\n", frame[17]);
+    printk("[EBP+72] = %x (User SS)\n", frame[18]);
+    
+    // printk("\nValidation:\n");
+    // u32 user_eip = frame[14];
+    // u32 user_cs = frame[15];
+    // u32 user_esp = frame[17];
+    // u32 user_ss = frame[18];
+    
+    // if (user_cs == 0x1B) {
+    //     printk("  ✓ CS = 0x1B (user code segment)\n");
+    // } else {
+    //     printk("  ✗ CS = 0x%x (WRONG! Should be 0x1B)\n", user_cs);
+    // }
+    
+    // if (user_ss == 0x23) {
+    //     printk("  ✓ SS = 0x23 (user data segment)\n");
+    // } else {
+    //     printk("  ✗ SS = 0x%x (WRONG! Should be 0x23)\n", user_ss);
+    // }
+    
+    // if (user_eip >= 0x00001000 && user_eip < 0x00100000) {
+    //     printk("  ✓ EIP = 0x%x (in user code range)\n", user_eip);
+    // } else {
+    //     printk("  ✗ EIP = 0x%x (SUSPICIOUS! Check if valid)\n", user_eip);
+    // }
+    
+    // if (user_esp >= 0x7FFFF000 && user_esp <= 0x80000000) {
+    //     printk("  ✓ ESP = 0x%x (in user stack range)\n", user_esp);
+    // } else {
+    //     printk("  ✗ ESP = 0x%x (WRONG! Not in user stack range)\n", user_esp);
+    // }
+    
+    // printk("===============================================\n\n");
     switch(syscall_num) {
         case SYS_EXIT:
             return sys_exit(arg1);
@@ -154,7 +217,18 @@ u32 syscall_dispatcher(u32 syscall_num, u32 arg1, u32 arg2, u32 arg3, u32 arg4, 
             return sys_print((const char*)arg1, 0);
         
         case SYS_READ:
-            return sys_read(arg1, (char*)arg2, arg3);
+            sys_read(arg1, (char*)arg2, arg3);
+            asm volatile("mov %%ebp, %0" : "=r"(ebp));
+    
+            frame = (u32*)ebp;
+            printk("\nCPU-pushed values:\n");
+            printk("[EBP+56] = %x (User EIP)\n", frame[14]);
+            printk("[EBP+60] = %x (User CS)\n", frame[15]);
+            printk("[EBP+64] = %x (User EFLAGS)\n", frame[16]);
+            printk("[EBP+68] = %x (User ESP)\n", frame[17]);
+            printk("[EBP+72] = %x (User SS)\n", frame[18]);
+
+            break;
 
         case SYS_EXEC_CMD:
             return process_cmd((const char*)arg1);
@@ -166,6 +240,8 @@ u32 syscall_dispatcher(u32 syscall_num, u32 arg1, u32 arg2, u32 arg3, u32 arg4, 
             printk("[KERNEL] Unknown syscall: %d\n", syscall_num);
             return -1; 
     }
+
+
 
     return 0;
 }

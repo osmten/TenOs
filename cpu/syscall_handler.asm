@@ -33,7 +33,8 @@ syscall_handler_asm:
     ; Clean up parameters (6 * 4 = 24 bytes)
     add esp, 24
     
-    add esp, 4    ; Skip saved EAX
+    ;add esp, 4    ; Skip saved EAX
+    pop eax
     pop ebx
     pop ecx
     pop edx
