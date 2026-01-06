@@ -155,10 +155,11 @@ int keyboard_read(char *user_buf, unsigned int count) {
         bytes_read++;
         
         if (user_buf[bytes_read - 1] == '\n') {
+            user_buf[bytes_read - 1] = '\0';
             break;
         }
     }
-    
+
     return bytes_read;
 }
 

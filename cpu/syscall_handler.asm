@@ -3,17 +3,9 @@ global syscall_handler_asm
 extern syscall_dispatcher
 
 syscall_handler_asm:
-    ; ═══════════════════════════════════════════════════════════
-    ; Syscall convention:
-    ; EAX = syscall number
-    ; EBX = arg1
-    ; ECX = arg2
-    ; EDX = arg3
-    ; ESI = arg4 (if used)
-    ; EDI = arg5 (if used)
-    ; ═══════════════════════════════════════════════════════════
+    ; CPU has pushed: SS, ESP, EFLAGS, CS, EIP
     
-    ; Save all caller-saved registers
+    ; Save all registers
     push edi
     push esi
     push edx
@@ -21,6 +13,9 @@ syscall_handler_asm:
     push ebx
     push eax
     
+    ; Stack: [EAX][EBX][ECX][EDX][ESI][EDI][EIP][CS][EFLAGS][ESP][SS]
+    
+    ; Push arguments (reverse order for C calling convention)
     push edi      ; arg5
     push esi      ; arg4
     push edx      ; arg3
@@ -28,17 +23,29 @@ syscall_handler_asm:
     push ebx      ; arg1
     push eax      ; syscall_num
     
-    call syscall_dispatcher
+    ; Stack: [num][a1][a2][a3][a4][a5][EAX][EBX][ECX][EDX][ESI][EDI][EIP]...
     
-    ; Clean up parameters (6 * 4 = 24 bytes)
+    call syscall_dispatcher
+    ; EAX has return value!
+    
+    ; Clean up function arguments (6 args * 4 bytes = 24)
     add esp, 24
     
-    ;add esp, 4    ; Skip saved EAX
-    pop eax
-    pop ebx
-    pop ecx
-    pop edx
-    pop esi
-    pop edi
-
+    ; Stack back to: [EAX][EBX][ECX][EDX][ESI][EDI][EIP][CS][EFLAGS][ESP][SS]
+    ;                 ↑ ESP
+    
+    ; Preserve return value by storing it in saved EAX slot
+    mov [esp], eax
+    
+    ; Restore all registers (now EAX will have the return value!)
+    pop eax       ; EAX = return value from syscall
+    pop ebx       ; EBX = original value
+    pop ecx       ; ECX = original value
+    pop edx       ; EDX = original value
+    pop esi       ; ESI = original value
+    pop edi       ; EDI = original value
+    
+    ; Stack now: [EIP][CS][EFLAGS][ESP][SS]
+    ; Perfect for IRET!
+    
     iret

@@ -1,12 +1,5 @@
 #include "shell.h"
 
-static int strcmp_user(const char *s1, const char *s2) {
-    while (*s1 && (*s1 == *s2)) {
-        s1++; s2++;
-    }
-    return *(unsigned char*)s1 - *(unsigned char*)s2;
-}
-
 void shell_main() {
     char line[256];
     
@@ -40,12 +33,16 @@ void shell_main() {
             }
             
             // Pass everything else to kernel via syscall
-            int result = 0; //sys_exec_command(line);
+            int result = sys_exec_command(line);
             
             if (result < 0) {
                 print("\nCommand failed or unknown command\n");
                 print("Type 'help' for available commands\n");
             }
+           for (int i = 0; i < 256; i++)
+           {
+                line[i] = 0;
+           }
         }
     }
 }
