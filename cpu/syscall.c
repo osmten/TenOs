@@ -73,12 +73,13 @@ static void cmd_cat(const char *args)
     char buff[256] = {0};
     int i = 0;
 
-    while(*args != ' ')
+    while(*args != '\0')
     {
         name[i] = *args;
         i++;
         args++;
     }
+    name[i] = '\0';
     fp = fat12_open(name);
     fat12_read(fp, buff, 256);
 
@@ -144,8 +145,7 @@ int process_cmd(const char *buff)
 
 // Main syscall dispatcher
 u32 syscall_dispatcher(u32 syscall_num, u32 arg1, u32 arg2, u32 arg3, u32 arg4, u32 arg5) {
-    // This function runs in RING 0 (kernel mode)
-    
+
     switch(syscall_num) {
         case SYS_EXIT:
             return sys_exit(arg1);
@@ -166,7 +166,6 @@ u32 syscall_dispatcher(u32 syscall_num, u32 arg1, u32 arg2, u32 arg3, u32 arg4, 
             printk("[KERNEL] Unknown syscall: %d\n", syscall_num);
             return -1; 
     }
-
     return 0;
 }
 

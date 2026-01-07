@@ -72,6 +72,17 @@ void vmmngr_free_page(pt_entry* e) {
 
 	pt_entry_del_attrib(e, I86_PTE_PRESENT);
 }
+void vmmngr_unmap_page(void *virt)
+{
+    struct pdirectory* pageDirectory = vmmngr_get_directory();
+    pd_entry* e = &pageDirectory->m_entries[PAGE_DIRECTORY_INDEX((u32)virt)];
+    
+    u32 table_phys = PAGE_GET_PHYSICAL_ADDRESS(e);
+    struct ptable* table = (struct ptable*)P2V(table_phys);
+    pt_entry* page = &table->m_entries[PAGE_TABLE_INDEX((u32)virt)];
+
+    pt_entry_del_attrib(page, I86_PTE_PRESENT);
+}
 
 void vmmngr_map_page(void* phys, void* virt) {
 

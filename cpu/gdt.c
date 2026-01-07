@@ -55,3 +55,7 @@ void tss_init(u32 kernel_stack) {
     asm volatile("str %%ax" : "=a"(tr));
     printk("Task Register: %x (should be 0x28)\n", tr);
 }
+
+void tss_set_kernel_stack(u32 stack) {
+    tss.esp0 = stack;
+}

@@ -7,6 +7,7 @@ FS_DIR      = fs
 MM_DIR      = mm
 LIB_DIR     = lib
 USR_DIR		= user
+PROC_DIR	= process
 
 # Source files
 C_SOURCES = $(wildcard $(KERNEL_DIR)/*.c) \
@@ -15,7 +16,8 @@ C_SOURCES = $(wildcard $(KERNEL_DIR)/*.c) \
             $(wildcard $(LIB_DIR)/*.c) \
             $(wildcard $(MM_DIR)/*.c) \
             $(wildcard $(FS_DIR)/*.c) \
-			$(wildcard $(USR_DIR)/*.c)
+			$(wildcard $(USR_DIR)/*.c) \
+			$(wildcard $(PROC_DIR)/*.c)
 
 HEADERS   = $(wildcard $(KERNEL_DIR)/*.h) \
             $(wildcard $(DRIVERS_DIR)/*.h) \
@@ -23,11 +25,13 @@ HEADERS   = $(wildcard $(KERNEL_DIR)/*.h) \
             $(wildcard $(LIB_DIR)/*.h) \
             $(wildcard $(MM_DIR)/*.h) \
             $(wildcard $(FS_DIR)/*.h) \
-			$(wildcard $(USR_DIR)/*.h)
+			$(wildcard $(USR_DIR)/*.h) \
+			$(wildcard $(PROC_DIR)/*.h)
 
 ASM_SOURCES = $(CPU_DIR)/interrupt.asm \
 				$(CPU_DIR)/kernel_gdt.asm \
-				$(CPU_DIR)/syscall_handler.asm
+				$(CPU_DIR)/syscall_handler.asm \
+				$(PROC_DIR)/jump_usermode.asm
 
 OBJ = ${C_SOURCES:.c=.o}
 ASM_OBJ = ${ASM_SOURCES:.asm=.o}

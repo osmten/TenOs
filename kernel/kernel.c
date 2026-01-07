@@ -53,11 +53,14 @@ void main(struct multiboot_info* bootinfo){
 	vmmngr_initialize(memSize);
 	fat12_init();
 
-	// Allocate user stack
+	// // Allocate user stack
     u32 user_stack = (u32)vmmngr_alloc_page() + 0x1000;
 
 	tss_init(&_stack_top);
 
-	jump_usermode(user_stack);
+	// jump_usermode(user_stack);
+
+	struct process *proc  = process_create("shell", shell_main, 4096);
+	process_run(proc);
 
 }

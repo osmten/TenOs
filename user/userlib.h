@@ -41,4 +41,6 @@ int sys_exec_command(const char *cmd);
 // Print a string
 int print_color(const char *str, int color);
 
+int strcmp_user(const char *s1, const char *s2);
+
 #endif

@@ -13,6 +13,7 @@
 #include <drivers/ports.h>
 #include <fs/fs.h>
 #include "jmp_user.h"
+#include <process/process.h>
 
 extern void kernel_gdt_load();
 
